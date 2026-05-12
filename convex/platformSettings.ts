@@ -87,7 +87,7 @@ export const getPlatformSettings = query({
       )
       .unique();
 
-    if (!user?.schoolId) {
+    if (!user) {
       return null;
     }
 
@@ -104,16 +104,27 @@ export const getPlatformSettings = query({
       return null;
     }
 
+    const schoolId =
+      user.schoolId ?? (await ctx.db.query("schools").first())?._id ?? null;
+
+    if (!schoolId) {
+      return {
+        ...DEFAULT_SETTINGS,
+        schoolId: null,
+        _id: undefined,
+      };
+    }
+
     const settings = await ctx.db
       .query("platformSettings")
-      .withIndex("by_school", (q) => q.eq("schoolId", user.schoolId!))
+      .withIndex("by_school", (q) => q.eq("schoolId", schoolId))
       .unique();
 
     // Return settings merged with defaults
     return {
       ...DEFAULT_SETTINGS,
       ...settings,
-      schoolId: user.schoolId,
+      schoolId,
       _id: settings?._id,
     };
   },
@@ -263,9 +274,12 @@ export const updatePlatformSettings = mutation({
       });
     }
 
-    if (!user.schoolId) {
+    const schoolId =
+      user.schoolId ?? (await ctx.db.query("schools").first())?._id ?? null;
+
+    if (!schoolId) {
       throw new ConvexError({
-        message: "User has no school assigned",
+        message: "No school found",
         code: "BAD_REQUEST",
       });
     }
@@ -273,7 +287,7 @@ export const updatePlatformSettings = mutation({
     // Check if settings exist
     const existingSettings = await ctx.db
       .query("platformSettings")
-      .withIndex("by_school", (q) => q.eq("schoolId", user.schoolId!))
+      .withIndex("by_school", (q) => q.eq("schoolId", schoolId))
       .unique();
 
     const updateData = {
@@ -289,7 +303,7 @@ export const updatePlatformSettings = mutation({
     } else {
       // Create new settings
       const settingsId = await ctx.db.insert("platformSettings", {
-        schoolId: user.schoolId,
+        schoolId,
         ...updateData,
       });
       return settingsId;
@@ -451,13 +465,20 @@ export const getAllSettings = query({
       )
       .unique();
 
-    if (!user?.schoolId) {
+    if (!user) {
+      return DEFAULT_SETTINGS;
+    }
+
+    const schoolId =
+      user.schoolId ?? (await ctx.db.query("schools").first())?._id ?? null;
+
+    if (!schoolId) {
       return DEFAULT_SETTINGS;
     }
 
     const settings = await ctx.db
       .query("platformSettings")
-      .withIndex("by_school", (q) => q.eq("schoolId", user.schoolId!))
+      .withIndex("by_school", (q) => q.eq("schoolId", schoolId))
       .unique();
 
     return {

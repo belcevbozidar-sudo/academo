@@ -231,6 +231,11 @@ export const updateSchoolDetails = mutation({
       });
     }
 
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
     // Check if user is admin
     if (!(await isAdmin(ctx))) {
       throw new ConvexError({
@@ -250,7 +255,16 @@ export const updateSchoolDetails = mutation({
         phone: args.phone,
         email: args.email,
       });
+
+      if (currentUser && !currentUser.schoolId) {
+        await ctx.db.patch(currentUser._id, { schoolId });
+      }
+
       return schoolId;
+    }
+
+    if (currentUser && !currentUser.schoolId) {
+      await ctx.db.patch(currentUser._id, { schoolId: school._id });
     }
 
     // Update school

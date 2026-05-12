@@ -405,6 +405,21 @@ function PlatformSettingsInner() {
     );
   }
 
+  if (settings && settings.schoolId === null) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
+        <SettingsIcon className="h-16 w-16 text-muted-foreground" />
+        <h1 className="text-2xl font-semibold">Липсват данни за училище</h1>
+        <p className="text-muted-foreground max-w-xl">
+          За да използвате настройките, първо трябва да има създадено училище в платформата.
+        </p>
+        <Button onClick={() => navigate(`/${lng}/admin/school`)}>
+          Отвори "Училище"
+        </Button>
+      </div>
+    );
+  }
+
   // Loading state
   if (settings === undefined || localSettings === null) {
     return (
