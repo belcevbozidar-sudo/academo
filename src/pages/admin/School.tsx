@@ -54,6 +54,8 @@ export default function School() {
   const schoolDetails = useQuery(api.admin.getSchoolDetails, {});
   const availableUsers = useQuery(api.admin.getUsersByRoles, {});
   const updateSchool = useMutation(api.admin.updateSchoolDetails);
+  const ensureDefaultSchool = useMutation(api.admin.ensureDefaultSchool);
+  const [isCreatingSchool, setIsCreatingSchool] = useState(false);
   
   const [editLeadershipDialog, setEditLeadershipDialog] = useState(false);
   const [editOtherDialog, setEditOtherDialog] = useState(false);
@@ -154,10 +156,28 @@ export default function School() {
   }
   
   if (!schoolDetails) {
+    const handleCreateSchool = async () => {
+      setIsCreatingSchool(true);
+      try {
+        await ensureDefaultSchool({});
+        toast.success("Училището е създадено");
+        navigate(`/${lng}/admin/school/edit-basic`);
+      } catch (error) {
+        toast.error("Не успяхме да създадем училището");
+      } finally {
+        setIsCreatingSchool(false);
+      }
+    };
+
     return (
       <Layout>
-        <div className="text-center text-muted-foreground">
-          Няма данни за училището
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center">
+          <div className="text-muted-foreground">
+            Няма данни за училището
+          </div>
+          <Button onClick={handleCreateSchool} disabled={isCreatingSchool}>
+            {isCreatingSchool ? "Създаване..." : "Създай училище"}
+          </Button>
         </div>
       </Layout>
     );

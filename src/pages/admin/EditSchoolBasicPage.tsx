@@ -138,11 +138,21 @@ export default function EditSchoolBasicPage() {
     }
   };
 
-  if (!schoolDetails) {
+  if (schoolDetails === undefined) {
     return (
       <Layout>
         <div className="max-w-4xl mx-auto p-6">
           <Skeleton className="h-96 w-full" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (schoolDetails === null) {
+    return (
+      <Layout>
+        <div className="max-w-4xl mx-auto p-6 text-center text-muted-foreground">
+          Няма създадено училище. Отворете страницата "Училище" и натиснете "Създай училище".
         </div>
       </Layout>
     );

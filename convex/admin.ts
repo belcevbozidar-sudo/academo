@@ -286,11 +286,23 @@ export const ensureDefaultSchool = mutation({
       });
     }
 
+    if (!(await isAdmin(ctx))) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "Only administrators can create a school",
+      });
+    }
+
     // Check if school already exists
     const existingSchool = await ctx.db.query("schools").first();
     if (existingSchool) {
       return existingSchool._id;
     }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
 
     // Create default school
     const schoolId = await ctx.db.insert("schools", {
@@ -299,6 +311,10 @@ export const ensureDefaultSchool = mutation({
       phone: "",
       email: "",
     });
+
+    if (currentUser && !currentUser.schoolId) {
+      await ctx.db.patch(currentUser._id, { schoolId });
+    }
 
     return schoolId;
   },
