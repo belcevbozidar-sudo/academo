@@ -24,6 +24,7 @@ import type * as dashboard from "../dashboard.js";
 import type * as dayRegimes from "../dayRegimes.js";
 import type * as deleteAllBadges from "../deleteAllBadges.js";
 import type * as deleteAllBadgesHelpers from "../deleteAllBadgesHelpers.js";
+import type * as demoSeed from "../demoSeed.js";
 import type * as diaryExports from "../diaryExports.js";
 import type * as documents from "../documents.js";
 import type * as events from "../events.js";
@@ -87,6 +88,7 @@ declare const fullApi: ApiFromModules<{
   dayRegimes: typeof dayRegimes;
   deleteAllBadges: typeof deleteAllBadges;
   deleteAllBadgesHelpers: typeof deleteAllBadgesHelpers;
+  demoSeed: typeof demoSeed;
   diaryExports: typeof diaryExports;
   documents: typeof documents;
   events: typeof events;
