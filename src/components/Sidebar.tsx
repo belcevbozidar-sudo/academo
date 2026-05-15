@@ -1730,8 +1730,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <DropdownContext.Provider value={{ openDropdown, setOpenDropdown }}>
       <div className="academo-sidebar flex h-full flex-col border-r border-[#ececf4] bg-white">
         {/* Logo Header */}
-        <div className="px-6 pb-6 pt-6">
-          <img src="/academo-logo.png" alt="Academo" className="h-9 w-auto" />
+        <div className="px-6 pb-7 pt-7">
+          <img src="/academo-logo.png" alt="Academo" className="h-12 w-auto" />
         </div>
 
         <nav className="academo-scrollbar flex-1 overflow-y-auto pb-5">

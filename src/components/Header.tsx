@@ -87,7 +87,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   };
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-30 h-20 border-b border-white/70 bg-white/82 backdrop-blur-xl md:left-72">
+    <header className="academo-topbar fixed left-0 right-0 top-0 z-30 h-20 border-b border-white/70 md:left-72">
       <div className="flex h-full items-center justify-between px-4 md:px-7">
         <div className="flex items-center gap-3">
           <Button

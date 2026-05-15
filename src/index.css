@@ -151,12 +151,26 @@
 }
 
 @layer components {
+  .academo-topbar {
+    border-color: rgba(255, 255, 255, 0.72);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.78) 0%,
+      rgba(255, 255, 255, 0.54) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.92),
+      0 22px 70px rgba(38, 30, 90, 0.1);
+    backdrop-filter: blur(24px) saturate(1.28);
+    -webkit-backdrop-filter: blur(24px) saturate(1.28);
+  }
+
   .academo-sidebar nav > div > div > a,
   .academo-sidebar nav > div > div > button,
-  .academo-sidebar .bg-sky-100 > a,
-  .academo-sidebar .bg-sky-100 > button,
-  .academo-sidebar .bg-sky-50 > a,
-  .academo-sidebar .bg-sky-50 > button {
+  .academo-sidebar .bg-sky-100 a,
+  .academo-sidebar .bg-sky-100 button,
+  .academo-sidebar .bg-sky-50 a,
+  .academo-sidebar .bg-sky-50 button {
     margin: 2px 12px;
     width: calc(100% - 24px);
     border-radius: 18px !important;
@@ -168,10 +182,10 @@
 
   .academo-sidebar nav > div > div > a:hover,
   .academo-sidebar nav > div > div > button:hover,
-  .academo-sidebar .bg-sky-100 > a:hover,
-  .academo-sidebar .bg-sky-100 > button:hover,
-  .academo-sidebar .bg-sky-50 > a:hover,
-  .academo-sidebar .bg-sky-50 > button:hover {
+  .academo-sidebar .bg-sky-100 a:hover,
+  .academo-sidebar .bg-sky-100 button:hover,
+  .academo-sidebar .bg-sky-50 a:hover,
+  .academo-sidebar .bg-sky-50 button:hover {
     border-color: rgba(255, 255, 255, 0.9);
     background: rgba(241, 242, 247, 0.9) !important;
     color: #111 !important;
@@ -210,6 +224,17 @@
     width: calc(100% - 16px);
     border-radius: 16px !important;
     background: rgba(255, 255, 255, 0.55);
+  }
+
+  .academo-sidebar .bg-sky-100 .bg-sky-300,
+  .academo-sidebar .bg-sky-100 .hover\:bg-sky-300:hover,
+  .academo-sidebar .bg-sky-50 .bg-sky-300,
+  .academo-sidebar .bg-sky-50 .hover\:bg-sky-300:hover {
+    border-color: rgba(255, 255, 255, 0.92) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    color: #111 !important;
+    box-shadow: 0 14px 34px rgba(38, 30, 90, 0.08);
   }
 
   .academo-sidebar svg {
