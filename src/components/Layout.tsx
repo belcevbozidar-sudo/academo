@@ -118,7 +118,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [currentUser, signoutRedirect, navigate, isAuthenticated, isPreviewMode]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_48%_0%,rgba(107,76,255,0.16),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f8f7ff_38%,#eeeaff_100%)] font-sans text-foreground">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_32%_0%,rgba(107,76,255,0.22),transparent_34%),radial-gradient(circle_at_88%_18%,rgba(255,39,54,0.16),transparent_30%),linear-gradient(180deg,#fff_0%,#f7f1ff_38%,#ffe9ee_100%)] font-sans text-foreground">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <main className="px-3 pb-8 pt-24 sm:px-4 md:ml-72 md:px-7 md:pt-28">

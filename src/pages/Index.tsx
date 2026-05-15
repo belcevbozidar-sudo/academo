@@ -73,7 +73,7 @@ function AcademoMetricCard({
   tone: string;
 }) {
   return (
-    <Card className="academo-soft-shadow overflow-hidden rounded-[28px] border-0 bg-white p-0 transition-transform duration-300 hover:-translate-y-0.5">
+    <Card className="academo-soft-shadow overflow-hidden rounded-[28px] border border-white/78 bg-[linear-gradient(145deg,rgba(255,255,255,0.94)_0%,rgba(246,242,255,0.94)_50%,rgba(255,239,242,0.9)_100%)] p-0 transition-transform duration-300 hover:-translate-y-0.5">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -547,7 +547,7 @@ function DashboardInner() {
     );
   }
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 pb-6">
+    <div className="academo-home-dashboard mx-auto w-full max-w-[1500px] space-y-6 pb-6">
       {/* Child Selector for Parents */}
       {isParent && parentChildren && parentChildren.length > 1 && (
         <Card className="border-0 shadow-lg bg-gradient-to-r from-purple-500 to-indigo-600">
@@ -599,42 +599,42 @@ function DashboardInner() {
             value={animatedGrade.toFixed(2)}
             detail={isStudent || isParent ? "лични данни" : "среден успех"}
             icon={TrendingUpIcon}
-            tone="bg-[#6b4cff]"
+            tone="bg-gradient-to-br from-[#6b4cff] to-[#4f2fd9]"
           />
           <AcademoMetricCard
             title="Оценки"
             value={animatedTotalGrades}
             detail="въведени оценки"
             icon={GraduationCapIcon}
-            tone="bg-[#1cb7e9]"
+            tone="bg-gradient-to-br from-[#6b4cff] to-[#ff2736]"
           />
           <AcademoMetricCard
             title="Отсъствия"
             value={animatedAbsences}
             detail="видими отсъствия"
             icon={XCircleIcon}
-            tone="bg-[#ff2736]"
+            tone="bg-gradient-to-br from-[#ff2736] to-[#d91524]"
           />
           <AcademoMetricCard
             title="Отзиви"
             value={animatedRemarks}
             detail="похвали и забележки"
             icon={MessageSquareIcon}
-            tone="bg-[#f15abe]"
+            tone="bg-gradient-to-br from-[#6b4cff] to-[#ff2736]"
           />
           <AcademoMetricCard
             title="Занятия"
             value={`${animatedLessonsPercentage}%`}
             detail="взети тази седмица"
             icon={BookOpenIcon}
-            tone="bg-[#111]"
+            tone="bg-gradient-to-br from-[#4f2fd9] to-[#6b4cff]"
           />
           <AcademoMetricCard
             title="Събития"
             value={animatedEvents}
             detail="предстоящи"
             icon={CalendarIcon}
-            tone="bg-[#ffd778] text-[#111]"
+            tone="bg-gradient-to-br from-[#ff2736] to-[#6b4cff]"
           />
         </div>
       )}
@@ -1344,11 +1344,11 @@ function DashboardInner() {
           {/* Modern Charts */}
           <div className="grid gap-4 lg:gap-6 lg:grid-cols-2">
             {/* Average Grade Chart */}
-            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 overflow-hidden">
-              <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-4">
+            <Card className="overflow-hidden border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.94)_0%,rgba(244,239,255,0.9)_55%,rgba(255,236,240,0.86)_100%)] shadow-lg dark:bg-gray-900">
+              <CardHeader className="border-b border-[#e8dcff] pb-4 dark:border-gray-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
+                    <div className="rounded-xl bg-gradient-to-br from-[#6b4cff] to-[#ff2736] p-2">
                       <TrendingUpIcon className="h-5 w-5 text-white" />
                     </div>
                     <div>
@@ -1369,8 +1369,8 @@ function DashboardInner() {
                         onClick={() => setPeriod(p)}
                         className={`h-8 px-3 text-xs font-medium ${
                           period === p
-                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                            ? "bg-gradient-to-r from-[#6b4cff] to-[#ff2736] text-white"
+                            : "hover:bg-[#f3ecff] dark:hover:bg-gray-800"
                         }`}
                       >
                         {p === "1m" && "1m"}
@@ -1403,9 +1403,9 @@ function DashboardInner() {
                               {week.average.toFixed(2)}
                             </span>
                           </div>
-                          <div className="relative h-3 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                          <div className="relative h-3 overflow-hidden rounded-full bg-[#efe8ff] dark:bg-gray-800">
                             <div
-                              className="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-500 group-hover:from-orange-500 group-hover:to-orange-700"
+                              className="absolute inset-0 rounded-full bg-gradient-to-r from-[#6b4cff] to-[#ff2736] transition-all duration-500"
                               style={{ width: `${(week.average / 6) * 100}%` }}
                             />
                           </div>
@@ -1425,11 +1425,11 @@ function DashboardInner() {
             </Card>
 
             {/* Absences Chart */}
-            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 overflow-hidden">
-              <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-4">
+            <Card className="overflow-hidden border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.94)_0%,rgba(255,238,242,0.9)_50%,rgba(244,239,255,0.86)_100%)] shadow-lg dark:bg-gray-900">
+              <CardHeader className="border-b border-[#ffd4da] pb-4 dark:border-gray-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600">
+                    <div className="rounded-xl bg-gradient-to-br from-[#ff2736] to-[#6b4cff] p-2">
                       <XCircleIcon className="h-5 w-5 text-white" />
                     </div>
                     <div>
@@ -1450,8 +1450,8 @@ function DashboardInner() {
                         onClick={() => setPeriod(p)}
                         className={`h-8 px-3 text-xs font-medium ${
                           period === p
-                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                            ? "bg-gradient-to-r from-[#ff2736] to-[#6b4cff] text-white"
+                            : "hover:bg-[#fff0f2] dark:hover:bg-gray-800"
                         }`}
                       >
                         {p === "1m" && "1m"}
@@ -1479,9 +1479,9 @@ function DashboardInner() {
                             {week.count}
                           </span>
                         </div>
-                        <div className="relative h-3 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                        <div className="relative h-3 overflow-hidden rounded-full bg-[#ffe3e7] dark:bg-gray-800">
                           <div
-                            className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full transition-all duration-500 group-hover:from-green-500 group-hover:to-emerald-700"
+                            className="absolute inset-0 rounded-full bg-gradient-to-r from-[#ff2736] to-[#6b4cff] transition-all duration-500"
                             style={{
                               width: `${Math.min((week.count / 2000) * 100, 100)}%`,
                             }}
