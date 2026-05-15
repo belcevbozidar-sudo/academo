@@ -14,19 +14,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const hasRecordedSession = useRef(false);
   const recordLoginSession = useMutation(api.users.recordLoginSession);
   const isPreviewMode = localStorage.getItem("academo.previewAuth") === "true";
-  
+
   // Only query when authenticated
   const isAuthenticated = !isLoading && !!user;
-  
+
   // Monitor for authentication errors
   const currentUser = useQuery(
-    api.users.getCurrentUser, 
-    isAuthenticated && !isPreviewMode ? {} : "skip"
+    api.users.getCurrentUser,
+    isAuthenticated && !isPreviewMode ? {} : "skip",
   );
 
   // Record device info for the current session once after login
   useEffect(() => {
-    if (!isPreviewMode && isAuthenticated && currentUser && !hasRecordedSession.current) {
+    if (
+      !isPreviewMode &&
+      isAuthenticated &&
+      currentUser &&
+      !hasRecordedSession.current
+    ) {
       hasRecordedSession.current = true;
       const ua = navigator.userAgent;
       // Parse browser and device from user agent
@@ -53,31 +58,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     // 3. getCurrentUser query has returned (not undefined)
     // 4. getCurrentUser returned null (user not found in DB)
     // 5. We haven't already checked (prevent loop)
-    const shouldCheckAuth = 
+    const shouldCheckAuth =
       !isPreviewMode &&
-      isAuthenticated && 
-      currentUser === null && 
+      isAuthenticated &&
+      currentUser === null &&
       !hasCheckedAuth.current;
 
     if (shouldCheckAuth) {
       hasCheckedAuth.current = true;
-      
+
       const checkAuthError = async () => {
         try {
           console.error("User not found in Layout - clearing all auth data");
-          
+
           // Clear all storage
           sessionStorage.clear();
           localStorage.clear();
-          
+
           // Clear all cookies
-          document.cookie.split(";").forEach(function(c) { 
-            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          document.cookie.split(";").forEach(function (c) {
+            document.cookie = c
+              .replace(/^ +/, "")
+              .replace(
+                /=.*/,
+                "=;expires=" + new Date().toUTCString() + ";path=/",
+              );
           });
-          
+
           // Sign out
           await signoutRedirect();
-          
+
           // Navigate to home and reload to ensure clean state
           navigate("/", { replace: true });
           window.location.reload();
@@ -86,12 +96,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           // Clear session and redirect on any error
           sessionStorage.clear();
           localStorage.clear();
-          
+
           // Clear cookies
-          document.cookie.split(";").forEach(function(c) { 
-            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          document.cookie.split(";").forEach(function (c) {
+            document.cookie = c
+              .replace(/^ +/, "")
+              .replace(
+                /=.*/,
+                "=;expires=" + new Date().toUTCString() + ";path=/",
+              );
           });
-          
+
           await signoutRedirect();
           navigate("/", { replace: true });
           window.location.reload();
@@ -103,10 +118,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [currentUser, signoutRedirect, navigate, isAuthenticated, isPreviewMode]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_48%_0%,rgba(107,76,255,0.16),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f8f7ff_38%,#eeeaff_100%)] font-sans text-foreground">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
-      <main className="mt-16 p-2 sm:p-4 md:ml-64 md:p-6">{children}</main>
+      <main className="px-3 pb-8 pt-24 sm:px-4 md:ml-72 md:px-7 md:pt-28">
+        {children}
+      </main>
     </div>
   );
 }

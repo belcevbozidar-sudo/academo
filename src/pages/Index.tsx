@@ -1,10 +1,19 @@
 import Layout from "@/components/Layout.tsx";
-import { Authenticated, Unauthenticated, AuthLoading } from "@/lib/convex-preview";
+import {
+  Authenticated,
+  Unauthenticated,
+  AuthLoading,
+} from "@/lib/convex-preview";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useQuery } from "@/lib/convex-preview";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx";
 import {
   TrendingUpIcon,
   GraduationCapIcon,
@@ -23,12 +32,16 @@ import {
   BarChartIcon,
   InfoIcon,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ComponentType } from "react";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Alert, AlertDescription } from "@/components/ui/alert.tsx";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible.tsx";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible.tsx";
 import { useAuth } from "@/hooks/use-auth.ts";
 import { toast } from "sonner";
 import {
@@ -38,6 +51,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx";
+
+const periodLabels = {
+  "1m": "1м",
+  "3m": "3м",
+  "6m": "6м",
+  "1y": "1г",
+} as const;
+
+function AcademoMetricCard({
+  title,
+  value,
+  detail,
+  icon: Icon,
+  tone,
+}: {
+  title: string;
+  value: string | number;
+  detail: string;
+  icon: ComponentType<{ className?: string }>;
+  tone: string;
+}) {
+  return (
+    <Card className="academo-soft-shadow overflow-hidden rounded-[28px] border-0 bg-white p-0 transition-transform duration-300 hover:-translate-y-0.5">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-black text-[#686974]">{title}</p>
+            <div className="mt-4 text-4xl font-black leading-none text-[#0e0e12] lg:text-5xl">
+              {value}
+            </div>
+            <p className="mt-2 text-sm font-bold text-[#8a8b92]">{detail}</p>
+          </div>
+          <div
+            className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-white shadow-[0_16px_34px_rgba(20,20,35,0.12)] ${tone}`}
+          >
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 // Counter animation hook with easing
 function useCountUp(end: number, duration: number = 1000) {
@@ -64,8 +119,11 @@ function useCountUp(end: number, duration: number = 1000) {
 
     const animate = (timestamp: number) => {
       if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const linearProgress = Math.min((timestamp - startTimeRef.current) / duration, 1);
-      
+      const linearProgress = Math.min(
+        (timestamp - startTimeRef.current) / duration,
+        1,
+      );
+
       // Apply easing function
       const easedProgress = easeOutCubic(linearProgress);
       const currentCount = Math.floor(easedProgress * end);
@@ -94,8 +152,11 @@ function DashboardInner() {
   const [isAbsentOpen, setIsAbsentOpen] = useState(false);
   const [isLateOpen, setIsLateOpen] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
-  
-  const backendCurrentUser = useQuery(api.users.getCurrentUser, isPreviewMode ? "skip" : {});
+
+  const backendCurrentUser = useQuery(
+    api.users.getCurrentUser,
+    isPreviewMode ? "skip" : {},
+  );
   type PreviewRole =
     | "director"
     | "vice_director"
@@ -116,58 +177,93 @@ function DashboardInner() {
         lastName: "Admin",
       }
     : backendCurrentUser;
-  
+
   // Check if current user is a PURE parent (not staff or admin)
   // Staff who are also parents should see school-wide metrics, not their child's data
-  const isParent = currentUser?.role === "parent" || 
-    (currentUser?.roles?.includes("parent") && 
-     !currentUser?.roles?.includes("director") && 
-     !currentUser?.roles?.includes("vice_director") && 
-     !currentUser?.roles?.includes("system_admin") &&
-     !currentUser?.roles?.includes("teacher") &&
-     !currentUser?.roles?.includes("class_teacher") &&
-     !currentUser?.roles?.includes("secretary") &&
-     !currentUser?.roles?.includes("pedagogical_counselor") && !currentUser?.roles?.includes("housekeeper"));
+  const isParent =
+    currentUser?.role === "parent" ||
+    (currentUser?.roles?.includes("parent") &&
+      !currentUser?.roles?.includes("director") &&
+      !currentUser?.roles?.includes("vice_director") &&
+      !currentUser?.roles?.includes("system_admin") &&
+      !currentUser?.roles?.includes("teacher") &&
+      !currentUser?.roles?.includes("class_teacher") &&
+      !currentUser?.roles?.includes("secretary") &&
+      !currentUser?.roles?.includes("pedagogical_counselor") &&
+      !currentUser?.roles?.includes("housekeeper"));
 
   const isStudent = currentUser?.role === "student";
-  
+
   // Check if user is secretary or housekeeper (they see simplified dashboard)
-  const isSecretaryOrHousekeeper = currentUser?.role === "secretary" || currentUser?.role === "housekeeper" ||
-    currentUser?.roles?.includes("secretary") || currentUser?.roles?.includes("housekeeper");
+  const isSecretaryOrHousekeeper =
+    currentUser?.role === "secretary" ||
+    currentUser?.role === "housekeeper" ||
+    currentUser?.roles?.includes("secretary") ||
+    currentUser?.roles?.includes("housekeeper");
 
   // OPTIMIZATION: Only fire admin-level queries when user is admin/teacher/director
   // This prevents students (~670), parents, and secretary/housekeeper from triggering
   // heavy school-wide queries (30,000+ document reads each)
   const userLoaded = currentUser !== undefined && currentUser !== null;
-  const needsAdminQueries = userLoaded && !isParent && !isStudent && !isSecretaryOrHousekeeper;
+  const needsAdminQueries =
+    userLoaded && !isParent && !isStudent && !isSecretaryOrHousekeeper;
   // Stats needed for students (personal) and admin (school-wide), not parents/secretary
   const needsStats = userLoaded && !isParent && !isSecretaryOrHousekeeper;
-  
+
   // Get parent's children
   const parentChildren = useQuery(
     api.users.getParentChildren,
-    !isPreviewMode && isParent && currentUser?._id ? { userId: currentUser._id } : "skip"
+    !isPreviewMode && isParent && currentUser?._id
+      ? { userId: currentUser._id }
+      : "skip",
   );
-  
+
   // Set default selected child when children load
   useEffect(() => {
     if (parentChildren && parentChildren.length > 0 && !selectedChildId) {
       setSelectedChildId(parentChildren[0].userId);
     }
   }, [parentChildren, selectedChildId]);
-  
+
   // OPTIMIZED: Skip heavy queries based on user role
   // Before: ALL 9 queries fired for ALL users (30,786 docs × every user × every data change)
   // After: Only admin/teacher users fire school-wide analytics queries
-  const backendStats = useQuery(api.dashboard.getDashboardStats, !isPreviewMode && needsStats ? { period } : "skip");
-  const backendGradesByWeek = useQuery(api.dashboard.getGradesByWeek, !isPreviewMode && needsAdminQueries ? { weeks: 12 } : "skip");
-  const backendAbsencesByWeek = useQuery(api.dashboard.getAbsencesByWeek, !isPreviewMode && needsAdminQueries ? { weeks: 12 } : "skip");
-  const backendClassesByAverage = useQuery(api.dashboard.getClassesByAverage, !isPreviewMode && needsAdminQueries ? {} : "skip");
-  const backendClassesByAbsences = useQuery(api.dashboard.getClassesByAbsences, !isPreviewMode && needsAdminQueries ? {} : "skip");
-  const backendStudentsByAverage = useQuery(api.dashboard.getStudentsByAverage, !isPreviewMode && needsAdminQueries ? {} : "skip");
-  const backendStudentsByAbsences = useQuery(api.dashboard.getStudentsByAbsences, !isPreviewMode && needsAdminQueries ? {} : "skip");
-  const backendActiveTeachers = useQuery(api.dashboard.getActiveTeachers, !isPreviewMode && needsAdminQueries ? {} : "skip");
-  const backendLessonsPercentage = useQuery(api.dashboard.getLessonsThisWeekPercentage, !isPreviewMode && needsStats ? {} : "skip");
+  const backendStats = useQuery(
+    api.dashboard.getDashboardStats,
+    !isPreviewMode && needsStats ? { period } : "skip",
+  );
+  const backendGradesByWeek = useQuery(
+    api.dashboard.getGradesByWeek,
+    !isPreviewMode && needsAdminQueries ? { weeks: 12 } : "skip",
+  );
+  const backendAbsencesByWeek = useQuery(
+    api.dashboard.getAbsencesByWeek,
+    !isPreviewMode && needsAdminQueries ? { weeks: 12 } : "skip",
+  );
+  const backendClassesByAverage = useQuery(
+    api.dashboard.getClassesByAverage,
+    !isPreviewMode && needsAdminQueries ? {} : "skip",
+  );
+  const backendClassesByAbsences = useQuery(
+    api.dashboard.getClassesByAbsences,
+    !isPreviewMode && needsAdminQueries ? {} : "skip",
+  );
+  const backendStudentsByAverage = useQuery(
+    api.dashboard.getStudentsByAverage,
+    !isPreviewMode && needsAdminQueries ? {} : "skip",
+  );
+  const backendStudentsByAbsences = useQuery(
+    api.dashboard.getStudentsByAbsences,
+    !isPreviewMode && needsAdminQueries ? {} : "skip",
+  );
+  const backendActiveTeachers = useQuery(
+    api.dashboard.getActiveTeachers,
+    !isPreviewMode && needsAdminQueries ? {} : "skip",
+  );
+  const backendLessonsPercentage = useQuery(
+    api.dashboard.getLessonsThisWeekPercentage,
+    !isPreviewMode && needsStats ? {} : "skip",
+  );
   const emptyStats = {
     averageGrade: 0,
     totalGrades: 0,
@@ -178,136 +274,227 @@ function DashboardInner() {
     warningCount: 0,
     totalRemarks: 0,
   };
-  const stats = isPreviewMode ? {
-    averageGrade: 5.42,
-    totalGrades: 1284,
-    attendanceRate: 94.8,
-    totalAbsences: 86,
-    upcomingEvents: 7,
-    praiseCount: 42,
-    warningCount: 13,
-    totalRemarks: 55,
-  } : (backendStats ?? emptyStats);
-  const gradesByWeek = isPreviewMode ? [
-    { week: "2026-02-09", count: 92, average: 5.18 },
-    { week: "2026-02-16", count: 118, average: 5.31 },
-    { week: "2026-02-23", count: 104, average: 5.46 },
-    { week: "2026-03-02", count: 136, average: 5.28 },
-    { week: "2026-03-09", count: 121, average: 5.55 },
-    { week: "2026-03-16", count: 148, average: 5.42 },
-  ] : backendGradesByWeek;
-  const absencesByWeek = isPreviewMode ? [
-    { week: "2026-02-09", count: 18 },
-    { week: "2026-02-16", count: 11 },
-    { week: "2026-02-23", count: 24 },
-    { week: "2026-03-02", count: 15 },
-    { week: "2026-03-09", count: 9 },
-    { week: "2026-03-16", count: 13 },
-  ] : backendAbsencesByWeek;
-  const classesByAverage = isPreviewMode ? {
-    top: [
-      { classId: "preview-1", className: "7А", average: 5.76 },
-      { classId: "preview-2", className: "6Б", average: 5.61 },
-      { classId: "preview-3", className: "8А", average: 5.48 },
-    ],
-    bottom: [
-      { classId: "preview-4", className: "9В", average: 4.82 },
-      { classId: "preview-5", className: "10Б", average: 4.91 },
-      { classId: "preview-6", className: "5А", average: 5.02 },
-    ],
-  } : backendClassesByAverage;
-  const classesByAbsences = isPreviewMode ? {
-    top: [
-      { classId: "preview-1", className: "10Б", absences: 31 },
-      { classId: "preview-2", className: "9В", absences: 27 },
-      { classId: "preview-3", className: "8А", absences: 18 },
-    ],
-    bottom: [
-      { classId: "preview-4", className: "5А", absences: 4 },
-      { classId: "preview-5", className: "6Б", absences: 6 },
-      { classId: "preview-6", className: "7А", absences: 8 },
-    ],
-  } : backendClassesByAbsences;
-  const studentsByAverage = isPreviewMode ? {
-    top: [
-      { studentId: "preview-1", studentName: "Мария Иванова", className: "7А", average: 6.0 },
-      { studentId: "preview-2", studentName: "Николай Петров", className: "6Б", average: 5.95 },
-      { studentId: "preview-3", studentName: "Елена Георгиева", className: "8А", average: 5.88 },
-    ],
-    bottom: [
-      { studentId: "preview-4", studentName: "Демо ученик 1", className: "9В", average: 4.32 },
-      { studentId: "preview-5", studentName: "Демо ученик 2", className: "10Б", average: 4.56 },
-      { studentId: "preview-6", studentName: "Демо ученик 3", className: "5А", average: 4.72 },
-    ],
-  } : backendStudentsByAverage;
-  const studentsByAbsences = isPreviewMode ? {
-    top: [
-      { studentId: "preview-1", studentName: "Демо ученик 4", className: "10Б", absences: 14 },
-      { studentId: "preview-2", studentName: "Демо ученик 5", className: "9В", absences: 11 },
-      { studentId: "preview-3", studentName: "Демо ученик 6", className: "8А", absences: 9 },
-    ],
-    bottom: [
-      { studentId: "preview-4", studentName: "Мария Иванова", className: "7А", absences: 0 },
-      { studentId: "preview-5", studentName: "Николай Петров", className: "6Б", absences: 1 },
-      { studentId: "preview-6", studentName: "Елена Георгиева", className: "8А", absences: 1 },
-    ],
-  } : backendStudentsByAbsences;
-  const activeTeachers = isPreviewMode ? [
-    { teacherId: "preview-1", teacherName: "Иван Димитров", activityCount: 42 },
-    { teacherId: "preview-2", teacherName: "Петя Николова", activityCount: 37 },
-    { teacherId: "preview-3", teacherName: "Георги Стоянов", activityCount: 29 },
-  ] : backendActiveTeachers;
+  const stats = isPreviewMode
+    ? {
+        averageGrade: 5.42,
+        totalGrades: 1284,
+        attendanceRate: 94.8,
+        totalAbsences: 86,
+        upcomingEvents: 7,
+        praiseCount: 42,
+        warningCount: 13,
+        totalRemarks: 55,
+      }
+    : (backendStats ?? emptyStats);
+  const gradesByWeek = isPreviewMode
+    ? [
+        { week: "2026-02-09", count: 92, average: 5.18 },
+        { week: "2026-02-16", count: 118, average: 5.31 },
+        { week: "2026-02-23", count: 104, average: 5.46 },
+        { week: "2026-03-02", count: 136, average: 5.28 },
+        { week: "2026-03-09", count: 121, average: 5.55 },
+        { week: "2026-03-16", count: 148, average: 5.42 },
+      ]
+    : backendGradesByWeek;
+  const absencesByWeek = isPreviewMode
+    ? [
+        { week: "2026-02-09", count: 18 },
+        { week: "2026-02-16", count: 11 },
+        { week: "2026-02-23", count: 24 },
+        { week: "2026-03-02", count: 15 },
+        { week: "2026-03-09", count: 9 },
+        { week: "2026-03-16", count: 13 },
+      ]
+    : backendAbsencesByWeek;
+  const classesByAverage = isPreviewMode
+    ? {
+        top: [
+          { classId: "preview-1", className: "7А", average: 5.76 },
+          { classId: "preview-2", className: "6Б", average: 5.61 },
+          { classId: "preview-3", className: "8А", average: 5.48 },
+        ],
+        bottom: [
+          { classId: "preview-4", className: "9В", average: 4.82 },
+          { classId: "preview-5", className: "10Б", average: 4.91 },
+          { classId: "preview-6", className: "5А", average: 5.02 },
+        ],
+      }
+    : backendClassesByAverage;
+  const classesByAbsences = isPreviewMode
+    ? {
+        top: [
+          { classId: "preview-1", className: "10Б", absences: 31 },
+          { classId: "preview-2", className: "9В", absences: 27 },
+          { classId: "preview-3", className: "8А", absences: 18 },
+        ],
+        bottom: [
+          { classId: "preview-4", className: "5А", absences: 4 },
+          { classId: "preview-5", className: "6Б", absences: 6 },
+          { classId: "preview-6", className: "7А", absences: 8 },
+        ],
+      }
+    : backendClassesByAbsences;
+  const studentsByAverage = isPreviewMode
+    ? {
+        top: [
+          {
+            studentId: "preview-1",
+            studentName: "Мария Иванова",
+            className: "7А",
+            average: 6.0,
+          },
+          {
+            studentId: "preview-2",
+            studentName: "Николай Петров",
+            className: "6Б",
+            average: 5.95,
+          },
+          {
+            studentId: "preview-3",
+            studentName: "Елена Георгиева",
+            className: "8А",
+            average: 5.88,
+          },
+        ],
+        bottom: [
+          {
+            studentId: "preview-4",
+            studentName: "Демо ученик 1",
+            className: "9В",
+            average: 4.32,
+          },
+          {
+            studentId: "preview-5",
+            studentName: "Демо ученик 2",
+            className: "10Б",
+            average: 4.56,
+          },
+          {
+            studentId: "preview-6",
+            studentName: "Демо ученик 3",
+            className: "5А",
+            average: 4.72,
+          },
+        ],
+      }
+    : backendStudentsByAverage;
+  const studentsByAbsences = isPreviewMode
+    ? {
+        top: [
+          {
+            studentId: "preview-1",
+            studentName: "Демо ученик 4",
+            className: "10Б",
+            absences: 14,
+          },
+          {
+            studentId: "preview-2",
+            studentName: "Демо ученик 5",
+            className: "9В",
+            absences: 11,
+          },
+          {
+            studentId: "preview-3",
+            studentName: "Демо ученик 6",
+            className: "8А",
+            absences: 9,
+          },
+        ],
+        bottom: [
+          {
+            studentId: "preview-4",
+            studentName: "Мария Иванова",
+            className: "7А",
+            absences: 0,
+          },
+          {
+            studentId: "preview-5",
+            studentName: "Николай Петров",
+            className: "6Б",
+            absences: 1,
+          },
+          {
+            studentId: "preview-6",
+            studentName: "Елена Георгиева",
+            className: "8А",
+            absences: 1,
+          },
+        ],
+      }
+    : backendStudentsByAbsences;
+  const activeTeachers = isPreviewMode
+    ? [
+        {
+          teacherId: "preview-1",
+          teacherName: "Иван Димитров",
+          activityCount: 42,
+        },
+        {
+          teacherId: "preview-2",
+          teacherName: "Петя Николова",
+          activityCount: 37,
+        },
+        {
+          teacherId: "preview-3",
+          teacherName: "Георги Стоянов",
+          activityCount: 29,
+        },
+      ]
+    : backendActiveTeachers;
   const lessonsPercentage = isPreviewMode ? 82 : backendLessonsPercentage;
-  
+
   // E-diary status
-  const eDiaryStatus = useQuery(api.platformSettings.isEDiaryEnabled, isPreviewMode ? "skip" : {});
-  
+  const eDiaryStatus = useQuery(
+    api.platformSettings.isEDiaryEnabled,
+    isPreviewMode ? "skip" : {},
+  );
+
   // Get student's class ID
   const studentClassId = useQuery(
-    api.users.getStudentClass, 
-    !isPreviewMode && currentUser?.role === "student" && currentUser?._id 
-      ? { userId: currentUser._id } 
-      : "skip"
+    api.users.getStudentClass,
+    !isPreviewMode && currentUser?.role === "student" && currentUser?._id
+      ? { userId: currentUser._id }
+      : "skip",
   );
-  
+
   // Get attendance for students
   const attendance = useQuery(
-    api.attendanceQueries.getStudentAttendanceByUserId, 
-    !isPreviewMode && currentUser?.role === "student" && currentUser?._id 
-      ? { userId: currentUser._id } 
-      : "skip"
+    api.attendanceQueries.getStudentAttendanceByUserId,
+    !isPreviewMode && currentUser?.role === "student" && currentUser?._id
+      ? { userId: currentUser._id }
+      : "skip",
   );
 
   // Get reviews for students
   const reviews = useQuery(
     api.reviews.getStudentReviewsByUserId,
-    !isPreviewMode && currentUser?.role === "student" && currentUser?._id 
-      ? { userId: currentUser._id } 
-      : "skip"
+    !isPreviewMode && currentUser?.role === "student" && currentUser?._id
+      ? { userId: currentUser._id }
+      : "skip",
   );
-  
+
   // Get attendance for parent's selected child
   const childAttendance = useQuery(
-    api.attendanceQueries.getStudentAttendanceByUserId, 
-    !isPreviewMode && isParent && selectedChildId 
-      ? { userId: selectedChildId as Id<"users"> } 
-      : "skip"
+    api.attendanceQueries.getStudentAttendanceByUserId,
+    !isPreviewMode && isParent && selectedChildId
+      ? { userId: selectedChildId as Id<"users"> }
+      : "skip",
   );
 
   // Get reviews for parent's selected child
   const childReviews = useQuery(
     api.reviews.getStudentReviewsByUserId,
-    !isPreviewMode && isParent && selectedChildId 
-      ? { userId: selectedChildId as Id<"users"> } 
-      : "skip"
+    !isPreviewMode && isParent && selectedChildId
+      ? { userId: selectedChildId as Id<"users"> }
+      : "skip",
   );
-  
+
   // Get grades for parent's selected child
   const childGrades = useQuery(
     api.grades.getGradesByStudentUserId,
-    !isPreviewMode && isParent && selectedChildId 
-      ? { userId: selectedChildId as Id<"users"> } 
-      : "skip"
+    !isPreviewMode && isParent && selectedChildId
+      ? { userId: selectedChildId as Id<"users"> }
+      : "skip",
   );
 
   // Calculate stats for parents based on selected child
@@ -315,43 +502,145 @@ function DashboardInner() {
     averageGrade: childGrades?.stats?.averageGrade || 0,
     totalGrades: childGrades?.stats?.totalGrades || 0,
     totalAbsences: childAttendance?.stats?.totalAbsent || 0,
-    totalRemarks: (childReviews?.warnings?.length || 0) + (childReviews?.praises?.length || 0),
+    totalRemarks:
+      (childReviews?.warnings?.length || 0) +
+      (childReviews?.praises?.length || 0),
   };
 
   // Animated counters (20% faster) - use child data for parents
   const animatedGrade = useCountUp(
-    isParent ? parentChildStats.averageGrade : (stats?.averageGrade || 0), 
-    1200
+    isParent ? parentChildStats.averageGrade : stats?.averageGrade || 0,
+    1200,
   );
   const animatedTotalGrades = useCountUp(
-    isParent ? parentChildStats.totalGrades : (stats?.totalGrades || 0), 
-    1200
+    isParent ? parentChildStats.totalGrades : stats?.totalGrades || 0,
+    1200,
   );
   const animatedAbsences = useCountUp(
-    isParent ? parentChildStats.totalAbsences : (stats?.totalAbsences || 0), 
-    1200
+    isParent ? parentChildStats.totalAbsences : stats?.totalAbsences || 0,
+    1200,
   );
   const animatedRemarks = useCountUp(
-    isParent ? parentChildStats.totalRemarks : (stats?.totalRemarks || 0), 
-    1200
+    isParent ? parentChildStats.totalRemarks : stats?.totalRemarks || 0,
+    1200,
   );
   const animatedEvents = useCountUp(stats?.upcomingEvents || 0, 1200);
   const animatedLessonsPercentage = useCountUp(lessonsPercentage || 0, 1200);
 
   // Get selected child's name for display
-  const selectedChild = parentChildren?.find(c => c.userId === selectedChildId);
+  const selectedChild = parentChildren?.find(
+    (c) => c.userId === selectedChildId,
+  );
 
   // Loading state: wait for user to load first, then role-specific data
   if (currentUser === undefined) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-96 w-full" />
+      <div className="mx-auto w-full max-w-[1500px] space-y-6">
+        <Skeleton className="h-72 w-full rounded-[32px]" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Skeleton className="h-36 rounded-[28px]" />
+          <Skeleton className="h-36 rounded-[28px]" />
+          <Skeleton className="h-36 rounded-[28px]" />
+          <Skeleton className="h-36 rounded-[28px]" />
+        </div>
       </div>
     );
   }
   return (
-    <div className="space-y-6 pb-6">
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 pb-6">
+      <section className="academo-soft-shadow overflow-hidden rounded-[34px] border border-white/80 bg-[radial-gradient(circle_at_72%_16%,rgba(107,76,255,0.20),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f7f5ff_54%,#ded8ff_100%)] p-5 md:p-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="inline-flex w-fit items-center gap-3 rounded-full border border-[#e8e8f1] bg-white/82 p-1 pr-5 font-black text-[#33343a] shadow-[0_10px_26px_rgba(40,35,90,0.08)]">
+            <span className="rounded-full bg-[#111] px-4 py-2 text-white">
+              Днес
+            </span>
+            Оперативно табло
+          </div>
+
+          <div className="flex w-fit gap-1 rounded-full bg-white/85 p-1 shadow-[0_14px_34px_rgba(38,30,90,0.10)]">
+            {(["1m", "3m", "6m", "1y"] as const).map((p) => (
+              <Button
+                key={p}
+                variant="ghost"
+                size="sm"
+                onClick={() => setPeriod(p)}
+                className={`h-10 rounded-full px-4 font-black hover:bg-[#f1f2f7] ${
+                  period === p
+                    ? "bg-[#111] text-white hover:bg-[#111] hover:text-white"
+                    : "text-[#62636d]"
+                }`}
+              >
+                {periodLabels[p]}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-end">
+          <div>
+            <h2 className="max-w-5xl text-5xl font-black leading-none text-[#0e0e12] sm:text-6xl lg:text-7xl">
+              Школата ви, подредена красиво.
+            </h2>
+            <p className="mt-5 max-w-3xl text-lg font-bold leading-8 text-[#62636d]">
+              Графици, оценки, присъствие, събития и обратна връзка са събрани в
+              спокойно място за екипа.
+            </p>
+          </div>
+
+          <div className="rounded-[30px] bg-white p-5 shadow-[0_28px_80px_rgba(38,30,90,0.14)]">
+            <div className="flex items-center justify-between border-b border-[#ececf4] pb-4">
+              <img
+                src="/academo-logo.png"
+                alt="Академо"
+                className="h-8 w-auto"
+              />
+              <span className="rounded-full bg-[#eef2ff] px-4 py-2 text-sm font-black text-[#6b4cff]">
+                Сега
+              </span>
+            </div>
+            <div className="mt-5 rounded-[24px] bg-[#f0f1f6] p-5">
+              <p className="text-sm font-black text-[#888891]">Бърз преглед</p>
+              <div className="mt-3 text-4xl font-black leading-none text-[#0e0e12]">
+                Всичко важно е отпред
+              </div>
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                <div className="rounded-2xl bg-white p-4">
+                  <span className="text-lg font-black text-[#1cb7e9]">
+                    {(isParent
+                      ? parentChildStats.averageGrade
+                      : stats.averageGrade
+                    ).toFixed(2)}
+                  </span>
+                  <p className="mt-2 text-xs font-black text-[#62636d]">
+                    успех
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white p-4">
+                  <span className="text-lg font-black text-[#6b4cff]">
+                    {isParent
+                      ? parentChildStats.totalGrades
+                      : stats.totalGrades}
+                  </span>
+                  <p className="mt-2 text-xs font-black text-[#62636d]">
+                    оценки
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white p-4">
+                  <span className="text-lg font-black text-[#ff2736]">
+                    {isParent
+                      ? parentChildStats.totalAbsences
+                      : stats.totalAbsences}
+                  </span>
+                  <p className="mt-2 text-xs font-black text-[#62636d]">
+                    отсъствия
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Child Selector for Parents */}
       {isParent && parentChildren && parentChildren.length > 1 && (
         <Card className="border-0 shadow-lg bg-gradient-to-r from-purple-500 to-indigo-600">
@@ -361,8 +650,8 @@ function DashboardInner() {
                 <GraduationCapIcon className="h-5 w-5" />
                 <span className="font-medium">Избери дете:</span>
               </div>
-              <Select 
-                value={selectedChildId || ""} 
+              <Select
+                value={selectedChildId || ""}
                 onValueChange={(value) => setSelectedChildId(value)}
               >
                 <SelectTrigger className="w-64 bg-white/20 border-white/30 text-white">
@@ -397,125 +686,50 @@ function DashboardInner() {
 
       {/* Modern KPI Cards with Glassmorphism - Hidden for secretary/housekeeper */}
       {!isSecretaryOrHousekeeper && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-        {/* Success/Grade Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-          <CardContent className="relative p-5 lg:p-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 lg:p-2.5 rounded-xl bg-white/20 backdrop-blur-md">
-                <TrendingUpIcon className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                {animatedGrade.toFixed(2)}
-              </div>
-              <div className="text-sm lg:text-base font-medium text-white/90">
-                {isStudent || isParent ? "Успех" : "Успех"}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Grades Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-emerald-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-          <CardContent className="relative p-5 lg:p-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 lg:p-2.5 rounded-xl bg-white/20 backdrop-blur-md">
-                <GraduationCapIcon className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                {animatedTotalGrades}
-              </div>
-              <div className="text-sm lg:text-base font-medium text-white/90">Оценки</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Absences Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-red-500 via-rose-500 to-pink-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-          <CardContent className="relative p-5 lg:p-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 lg:p-2.5 rounded-xl bg-white/20 backdrop-blur-md">
-                <XCircleIcon className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                {animatedAbsences}
-              </div>
-              <div className="text-sm lg:text-base font-medium text-white/90">Отсъствия</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Reviews Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-          <CardContent className="relative p-5 lg:p-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 lg:p-2.5 rounded-xl bg-white/20 backdrop-blur-md">
-                <MessageSquareIcon className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                {animatedRemarks}
-              </div>
-              <div className="text-sm lg:text-base font-medium text-white/90">Отзива</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Lessons Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-          <CardContent className="relative p-5 lg:p-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 lg:p-2.5 rounded-xl bg-white/20 backdrop-blur-md">
-                <BookOpenIcon className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                {animatedLessonsPercentage}%
-              </div>
-              <div className="text-sm lg:text-base font-medium text-white/90">
-                Взети занятия тази седмица
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Events Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-purple-500 via-violet-500 to-indigo-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-          <CardContent className="relative p-5 lg:p-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 lg:p-2.5 rounded-xl bg-white/20 backdrop-blur-md">
-                <CalendarIcon className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                {animatedEvents}
-              </div>
-              <div className="text-sm lg:text-base font-medium text-white/90">Събития</div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <AcademoMetricCard
+            title="Успех"
+            value={animatedGrade.toFixed(2)}
+            detail={isStudent || isParent ? "лични данни" : "среден успех"}
+            icon={TrendingUpIcon}
+            tone="bg-[#6b4cff]"
+          />
+          <AcademoMetricCard
+            title="Оценки"
+            value={animatedTotalGrades}
+            detail="въведени оценки"
+            icon={GraduationCapIcon}
+            tone="bg-[#1cb7e9]"
+          />
+          <AcademoMetricCard
+            title="Отсъствия"
+            value={animatedAbsences}
+            detail="видими отсъствия"
+            icon={XCircleIcon}
+            tone="bg-[#ff2736]"
+          />
+          <AcademoMetricCard
+            title="Отзиви"
+            value={animatedRemarks}
+            detail="похвали и забележки"
+            icon={MessageSquareIcon}
+            tone="bg-[#f15abe]"
+          />
+          <AcademoMetricCard
+            title="Занятия"
+            value={`${animatedLessonsPercentage}%`}
+            detail="взети тази седмица"
+            icon={BookOpenIcon}
+            tone="bg-[#111]"
+          />
+          <AcademoMetricCard
+            title="Събития"
+            value={animatedEvents}
+            detail="предстоящи"
+            icon={CalendarIcon}
+            tone="bg-[#ffd778] text-[#111]"
+          />
+        </div>
       )}
 
       {/* E-Diary Status Banner (shows when hybrid mode is enabled) */}
@@ -524,7 +738,8 @@ function DashboardInner() {
           <InfoIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           <AlertDescription className="ml-2">
             <div className="font-medium text-blue-800 dark:text-blue-200">
-              {eDiaryStatus.message || "Училището използва хибриден режим (електронен + хартиен дневник)"}
+              {eDiaryStatus.message ||
+                "Училището използва хибриден режим (електронен + хартиен дневник)"}
             </div>
           </AlertDescription>
         </Alert>
@@ -534,116 +749,139 @@ function DashboardInner() {
       {isStudent && (
         <>
           {/* Student Reviews */}
-          {reviews && (reviews.praises.length > 0 || reviews.warnings.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Моите отзиви</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {/* Praises Collapsible */}
-                  {reviews.praises.length > 0 && (
-                    <Collapsible open={isPraisesOpen} onOpenChange={setIsPraisesOpen}>
-                      <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-green-100 dark:bg-green-950/40 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <MessageSquareIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
-                            <span className="font-medium text-green-900 dark:text-green-100">
-                              {reviews.praises.length} {reviews.praises.length === 1 ? "похвала" : "похвали"}
-                            </span>
-                          </div>
-                          {isPraisesOpen ? (
-                            <ChevronUpIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
-                          ) : (
-                            <ChevronDownIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
-                          )}
-                        </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto">
-                          {reviews.praises.map((praise) => (
-                            <div
-                              key={praise._id}
-                              className="p-3 rounded-lg border bg-white dark:bg-gray-950 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-                            >
-                              <div className="font-medium text-sm">{praise.content}</div>
-                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                <span>
-                                  {new Date(praise.date).toLocaleDateString("bg-BG", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                                <span>•</span>
-                                <span>{praise.teacherName}</span>
-                                {praise.subjectName && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{praise.subjectName}</span>
-                                  </>
-                                )}
-                              </div>
+          {reviews &&
+            (reviews.praises.length > 0 || reviews.warnings.length > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Моите отзиви</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {/* Praises Collapsible */}
+                    {reviews.praises.length > 0 && (
+                      <Collapsible
+                        open={isPraisesOpen}
+                        onOpenChange={setIsPraisesOpen}
+                      >
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-green-100 dark:bg-green-950/40 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <MessageSquareIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
+                              <span className="font-medium text-green-900 dark:text-green-100">
+                                {reviews.praises.length}{" "}
+                                {reviews.praises.length === 1
+                                  ? "похвала"
+                                  : "похвали"}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
+                            {isPraisesOpen ? (
+                              <ChevronUpIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
+                            )}
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto">
+                            {reviews.praises.map((praise) => (
+                              <div
+                                key={praise._id}
+                                className="p-3 rounded-lg border bg-white dark:bg-gray-950 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                              >
+                                <div className="font-medium text-sm">
+                                  {praise.content}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                  <span>
+                                    {new Date(praise.date).toLocaleDateString(
+                                      "bg-BG",
+                                      {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                      },
+                                    )}
+                                  </span>
+                                  <span>•</span>
+                                  <span>{praise.teacherName}</span>
+                                  {praise.subjectName && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{praise.subjectName}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
 
-                  {/* Warnings Collapsible */}
-                  {reviews.warnings.length > 0 && (
-                    <Collapsible open={isWarningsOpen} onOpenChange={setIsWarningsOpen}>
-                      <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-red-200 dark:bg-red-950/60 hover:bg-red-300 dark:hover:bg-red-900/70 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <AlertCircleIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
-                            <span className="font-medium text-red-900 dark:text-red-100">
-                              {reviews.warnings.length} {reviews.warnings.length === 1 ? "забележка" : "забележки"}
-                            </span>
-                          </div>
-                          {isWarningsOpen ? (
-                            <ChevronUpIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
-                          ) : (
-                            <ChevronDownIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
-                          )}
-                        </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto">
-                          {reviews.warnings.map((warning) => (
-                            <div
-                              key={warning._id}
-                              className="p-3 rounded-lg border bg-white dark:bg-gray-950 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            >
-                              <div className="font-medium text-sm">{warning.content}</div>
-                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                <span>
-                                  {new Date(warning.date).toLocaleDateString("bg-BG", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                                <span>•</span>
-                                <span>{warning.teacherName}</span>
-                                {warning.subjectName && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{warning.subjectName}</span>
-                                  </>
-                                )}
-                              </div>
+                    {/* Warnings Collapsible */}
+                    {reviews.warnings.length > 0 && (
+                      <Collapsible
+                        open={isWarningsOpen}
+                        onOpenChange={setIsWarningsOpen}
+                      >
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-red-200 dark:bg-red-950/60 hover:bg-red-300 dark:hover:bg-red-900/70 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <AlertCircleIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
+                              <span className="font-medium text-red-900 dark:text-red-100">
+                                {reviews.warnings.length}{" "}
+                                {reviews.warnings.length === 1
+                                  ? "забележка"
+                                  : "забележки"}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                            {isWarningsOpen ? (
+                              <ChevronUpIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
+                            )}
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto">
+                            {reviews.warnings.map((warning) => (
+                              <div
+                                key={warning._id}
+                                className="p-3 rounded-lg border bg-white dark:bg-gray-950 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              >
+                                <div className="font-medium text-sm">
+                                  {warning.content}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                  <span>
+                                    {new Date(warning.date).toLocaleDateString(
+                                      "bg-BG",
+                                      {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                      },
+                                    )}
+                                  </span>
+                                  <span>•</span>
+                                  <span>{warning.teacherName}</span>
+                                  {warning.subjectName && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{warning.subjectName}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
           {/* Student Absences Section */}
           {attendance && attendance.all.length > 0 && (
@@ -691,14 +929,24 @@ function DashboardInner() {
                   </div>
 
                   {/* Absent Collapsible */}
-                  {attendance.all.filter((r) => r.status === "absent").length > 0 && (
-                    <Collapsible open={isAbsentOpen} onOpenChange={setIsAbsentOpen}>
+                  {attendance.all.filter((r) => r.status === "absent").length >
+                    0 && (
+                    <Collapsible
+                      open={isAbsentOpen}
+                      onOpenChange={setIsAbsentOpen}
+                    >
                       <CollapsibleTrigger className="w-full">
                         <div className="flex items-center justify-between p-3 rounded-lg bg-red-100 dark:bg-red-950/40 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                           <div className="flex items-center gap-2">
                             <XCircleIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
                             <span className="font-medium text-red-900 dark:text-red-100">
-                              Вижте всички неизвинени ({attendance.all.filter((r) => r.status === "absent").length})
+                              Вижте всички неизвинени (
+                              {
+                                attendance.all.filter(
+                                  (r) => r.status === "absent",
+                                ).length
+                              }
+                              )
                             </span>
                           </div>
                           {isAbsentOpen ? (
@@ -720,19 +968,26 @@ function DashboardInner() {
                                 <div className="flex items-center gap-3">
                                   <XCircleIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
                                   <div>
-                                    <div className="font-medium">{record.subjectName}</div>
+                                    <div className="font-medium">
+                                      {record.subjectName}
+                                    </div>
                                     <div className="text-sm text-muted-foreground">
-                                      {new Date(record.date).toLocaleDateString("bg-BG", {
-                                        day: "numeric",
-                                        month: "short",
-                                        year: "numeric",
-                                      })}{" "}
+                                      {new Date(record.date).toLocaleDateString(
+                                        "bg-BG",
+                                        {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        },
+                                      )}{" "}
                                       - {record.period} час
                                     </div>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-sm font-medium">Неизвинено</div>
+                                  <div className="text-sm font-medium">
+                                    Неизвинено
+                                  </div>
                                   {record.notes && (
                                     <div className="text-xs text-muted-foreground">
                                       {record.notes}
@@ -747,14 +1002,21 @@ function DashboardInner() {
                   )}
 
                   {/* Late Collapsible */}
-                  {attendance.all.filter((r) => r.status === "late").length > 0 && (
+                  {attendance.all.filter((r) => r.status === "late").length >
+                    0 && (
                     <Collapsible open={isLateOpen} onOpenChange={setIsLateOpen}>
                       <CollapsibleTrigger className="w-full">
                         <div className="flex items-center justify-between p-3 rounded-lg bg-orange-100 dark:bg-orange-950/40 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
                           <div className="flex items-center gap-2">
                             <ClockIcon className="h-5 w-5 text-orange-700 dark:text-orange-400" />
                             <span className="font-medium text-orange-900 dark:text-orange-100">
-                              Вижте всички закъснения ({attendance.all.filter((r) => r.status === "late").length})
+                              Вижте всички закъснения (
+                              {
+                                attendance.all.filter(
+                                  (r) => r.status === "late",
+                                ).length
+                              }
+                              )
                             </span>
                           </div>
                           {isLateOpen ? (
@@ -776,19 +1038,26 @@ function DashboardInner() {
                                 <div className="flex items-center gap-3">
                                   <ClockIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                                   <div>
-                                    <div className="font-medium">{record.subjectName}</div>
+                                    <div className="font-medium">
+                                      {record.subjectName}
+                                    </div>
                                     <div className="text-sm text-muted-foreground">
-                                      {new Date(record.date).toLocaleDateString("bg-BG", {
-                                        day: "numeric",
-                                        month: "short",
-                                        year: "numeric",
-                                      })}{" "}
+                                      {new Date(record.date).toLocaleDateString(
+                                        "bg-BG",
+                                        {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        },
+                                      )}{" "}
                                       - {record.period} час
                                     </div>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-sm font-medium">Закъснение</div>
+                                  <div className="text-sm font-medium">
+                                    Закъснение
+                                  </div>
                                   {record.notes && (
                                     <div className="text-xs text-muted-foreground">
                                       {record.notes}
@@ -812,116 +1081,140 @@ function DashboardInner() {
       {isParent && selectedChildId && (
         <>
           {/* Child's Reviews */}
-          {childReviews && (childReviews.praises.length > 0 || childReviews.warnings.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Отзиви за {selectedChild?.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {/* Praises Collapsible */}
-                  {childReviews.praises.length > 0 && (
-                    <Collapsible open={isPraisesOpen} onOpenChange={setIsPraisesOpen}>
-                      <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-green-100 dark:bg-green-950/40 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <MessageSquareIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
-                            <span className="font-medium text-green-900 dark:text-green-100">
-                              {childReviews.praises.length} {childReviews.praises.length === 1 ? "похвала" : "похвали"}
-                            </span>
-                          </div>
-                          {isPraisesOpen ? (
-                            <ChevronUpIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
-                          ) : (
-                            <ChevronDownIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
-                          )}
-                        </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto">
-                          {childReviews.praises.map((praise) => (
-                            <div
-                              key={praise._id}
-                              className="p-3 rounded-lg border bg-white dark:bg-gray-950 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-                            >
-                              <div className="font-medium text-sm">{praise.content}</div>
-                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                <span>
-                                  {new Date(praise.date).toLocaleDateString("bg-BG", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                                <span>•</span>
-                                <span>{praise.teacherName}</span>
-                                {praise.subjectName && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{praise.subjectName}</span>
-                                  </>
-                                )}
-                              </div>
+          {childReviews &&
+            (childReviews.praises.length > 0 ||
+              childReviews.warnings.length > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Отзиви за {selectedChild?.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {/* Praises Collapsible */}
+                    {childReviews.praises.length > 0 && (
+                      <Collapsible
+                        open={isPraisesOpen}
+                        onOpenChange={setIsPraisesOpen}
+                      >
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-green-100 dark:bg-green-950/40 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <MessageSquareIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
+                              <span className="font-medium text-green-900 dark:text-green-100">
+                                {childReviews.praises.length}{" "}
+                                {childReviews.praises.length === 1
+                                  ? "похвала"
+                                  : "похвали"}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
+                            {isPraisesOpen ? (
+                              <ChevronUpIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
+                            )}
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto">
+                            {childReviews.praises.map((praise) => (
+                              <div
+                                key={praise._id}
+                                className="p-3 rounded-lg border bg-white dark:bg-gray-950 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                              >
+                                <div className="font-medium text-sm">
+                                  {praise.content}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                  <span>
+                                    {new Date(praise.date).toLocaleDateString(
+                                      "bg-BG",
+                                      {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                      },
+                                    )}
+                                  </span>
+                                  <span>•</span>
+                                  <span>{praise.teacherName}</span>
+                                  {praise.subjectName && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{praise.subjectName}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
 
-                  {/* Warnings Collapsible */}
-                  {childReviews.warnings.length > 0 && (
-                    <Collapsible open={isWarningsOpen} onOpenChange={setIsWarningsOpen}>
-                      <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-red-200 dark:bg-red-950/60 hover:bg-red-300 dark:hover:bg-red-900/70 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <AlertCircleIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
-                            <span className="font-medium text-red-900 dark:text-red-100">
-                              {childReviews.warnings.length} {childReviews.warnings.length === 1 ? "забележка" : "забележки"}
-                            </span>
-                          </div>
-                          {isWarningsOpen ? (
-                            <ChevronUpIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
-                          ) : (
-                            <ChevronDownIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
-                          )}
-                        </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto">
-                          {childReviews.warnings.map((warning) => (
-                            <div
-                              key={warning._id}
-                              className="p-3 rounded-lg border bg-white dark:bg-gray-950 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            >
-                              <div className="font-medium text-sm">{warning.content}</div>
-                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                <span>
-                                  {new Date(warning.date).toLocaleDateString("bg-BG", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                                <span>•</span>
-                                <span>{warning.teacherName}</span>
-                                {warning.subjectName && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{warning.subjectName}</span>
-                                  </>
-                                )}
-                              </div>
+                    {/* Warnings Collapsible */}
+                    {childReviews.warnings.length > 0 && (
+                      <Collapsible
+                        open={isWarningsOpen}
+                        onOpenChange={setIsWarningsOpen}
+                      >
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-red-200 dark:bg-red-950/60 hover:bg-red-300 dark:hover:bg-red-900/70 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <AlertCircleIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
+                              <span className="font-medium text-red-900 dark:text-red-100">
+                                {childReviews.warnings.length}{" "}
+                                {childReviews.warnings.length === 1
+                                  ? "забележка"
+                                  : "забележки"}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                            {isWarningsOpen ? (
+                              <ChevronUpIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
+                            )}
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto">
+                            {childReviews.warnings.map((warning) => (
+                              <div
+                                key={warning._id}
+                                className="p-3 rounded-lg border bg-white dark:bg-gray-950 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              >
+                                <div className="font-medium text-sm">
+                                  {warning.content}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                  <span>
+                                    {new Date(warning.date).toLocaleDateString(
+                                      "bg-BG",
+                                      {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                      },
+                                    )}
+                                  </span>
+                                  <span>•</span>
+                                  <span>{warning.teacherName}</span>
+                                  {warning.subjectName && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{warning.subjectName}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
           {/* Child's Absences Section */}
           {childAttendance && childAttendance.all.length > 0 && (
@@ -969,14 +1262,24 @@ function DashboardInner() {
                   </div>
 
                   {/* Absent Collapsible */}
-                  {childAttendance.all.filter((r) => r.status === "absent").length > 0 && (
-                    <Collapsible open={isAbsentOpen} onOpenChange={setIsAbsentOpen}>
+                  {childAttendance.all.filter((r) => r.status === "absent")
+                    .length > 0 && (
+                    <Collapsible
+                      open={isAbsentOpen}
+                      onOpenChange={setIsAbsentOpen}
+                    >
                       <CollapsibleTrigger className="w-full">
                         <div className="flex items-center justify-between p-3 rounded-lg bg-red-100 dark:bg-red-950/40 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                           <div className="flex items-center gap-2">
                             <XCircleIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
                             <span className="font-medium text-red-900 dark:text-red-100">
-                              Вижте всички неизвинени ({childAttendance.all.filter((r) => r.status === "absent").length})
+                              Вижте всички неизвинени (
+                              {
+                                childAttendance.all.filter(
+                                  (r) => r.status === "absent",
+                                ).length
+                              }
+                              )
                             </span>
                           </div>
                           {isAbsentOpen ? (
@@ -998,19 +1301,26 @@ function DashboardInner() {
                                 <div className="flex items-center gap-3">
                                   <XCircleIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
                                   <div>
-                                    <div className="font-medium">{record.subjectName}</div>
+                                    <div className="font-medium">
+                                      {record.subjectName}
+                                    </div>
                                     <div className="text-sm text-muted-foreground">
-                                      {new Date(record.date).toLocaleDateString("bg-BG", {
-                                        day: "numeric",
-                                        month: "short",
-                                        year: "numeric",
-                                      })}{" "}
+                                      {new Date(record.date).toLocaleDateString(
+                                        "bg-BG",
+                                        {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        },
+                                      )}{" "}
                                       - {record.period} час
                                     </div>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-sm font-medium">Неизвинено</div>
+                                  <div className="text-sm font-medium">
+                                    Неизвинено
+                                  </div>
                                   {record.notes && (
                                     <div className="text-xs text-muted-foreground">
                                       {record.notes}
@@ -1025,14 +1335,21 @@ function DashboardInner() {
                   )}
 
                   {/* Late Collapsible */}
-                  {childAttendance.all.filter((r) => r.status === "late").length > 0 && (
+                  {childAttendance.all.filter((r) => r.status === "late")
+                    .length > 0 && (
                     <Collapsible open={isLateOpen} onOpenChange={setIsLateOpen}>
                       <CollapsibleTrigger className="w-full">
                         <div className="flex items-center justify-between p-3 rounded-lg bg-orange-100 dark:bg-orange-950/40 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
                           <div className="flex items-center gap-2">
                             <ClockIcon className="h-5 w-5 text-orange-700 dark:text-orange-400" />
                             <span className="font-medium text-orange-900 dark:text-orange-100">
-                              Вижте всички закъснения ({childAttendance.all.filter((r) => r.status === "late").length})
+                              Вижте всички закъснения (
+                              {
+                                childAttendance.all.filter(
+                                  (r) => r.status === "late",
+                                ).length
+                              }
+                              )
                             </span>
                           </div>
                           {isLateOpen ? (
@@ -1054,19 +1371,26 @@ function DashboardInner() {
                                 <div className="flex items-center gap-3">
                                   <ClockIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                                   <div>
-                                    <div className="font-medium">{record.subjectName}</div>
+                                    <div className="font-medium">
+                                      {record.subjectName}
+                                    </div>
                                     <div className="text-sm text-muted-foreground">
-                                      {new Date(record.date).toLocaleDateString("bg-BG", {
-                                        day: "numeric",
-                                        month: "short",
-                                        year: "numeric",
-                                      })}{" "}
+                                      {new Date(record.date).toLocaleDateString(
+                                        "bg-BG",
+                                        {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        },
+                                      )}{" "}
                                       - {record.period} час
                                     </div>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-sm font-medium">Закъснение</div>
+                                  <div className="text-sm font-medium">
+                                    Закъснение
+                                  </div>
                                   {record.notes && (
                                     <div className="text-xs text-muted-foreground">
                                       {record.notes}
@@ -1095,8 +1419,12 @@ function DashboardInner() {
                 <UserIcon className="h-8 w-8" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">Добре дошли, {currentUser?.firstName} {currentUser?.lastName}!</h2>
-                <p className="text-white/80 mt-1">Използвайте менюто отляво за достъп до наличните модули.</p>
+                <h2 className="text-2xl font-bold">
+                  Добре дошли, {currentUser?.firstName} {currentUser?.lastName}!
+                </h2>
+                <p className="text-white/80 mt-1">
+                  Използвайте менюто отляво за достъп до наличните модули.
+                </p>
               </div>
             </div>
           </CardContent>
@@ -1120,7 +1448,9 @@ function DashboardInner() {
                       <CardTitle className="text-base font-bold text-gray-900 dark:text-gray-100">
                         Среден успех
                       </CardTitle>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Училище</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Училище
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1148,27 +1478,33 @@ function DashboardInner() {
               <CardContent className="p-6">
                 {gradesByWeek && gradesByWeek.length > 0 ? (
                   <div className="space-y-3">
-                    {gradesByWeek.map((week: { week: string; count: number; average: number }) => (
-                      <div key={week.week} className="group">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                            {new Date(week.week).toLocaleDateString("bg-BG", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </span>
-                          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                            {week.average.toFixed(2)}
-                          </span>
+                    {gradesByWeek.map(
+                      (week: {
+                        week: string;
+                        count: number;
+                        average: number;
+                      }) => (
+                        <div key={week.week} className="group">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                              {new Date(week.week).toLocaleDateString("bg-BG", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                              {week.average.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="relative h-3 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                            <div
+                              className="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-500 group-hover:from-orange-500 group-hover:to-orange-700"
+                              style={{ width: `${(week.average / 6) * 100}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="relative h-3 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                          <div
-                            className="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-500 group-hover:from-orange-500 group-hover:to-orange-700"
-                            style={{ width: `${(week.average / 6) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12">
@@ -1193,7 +1529,9 @@ function DashboardInner() {
                       <CardTitle className="text-base font-bold text-gray-900 dark:text-gray-100">
                         Отсъствия
                       </CardTitle>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">По седмици</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        По седмици
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1237,7 +1575,9 @@ function DashboardInner() {
                         <div className="relative h-3 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                           <div
                             className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full transition-all duration-500 group-hover:from-green-500 group-hover:to-emerald-700"
-                            style={{ width: `${Math.min((week.count / 2000) * 100, 100)}%` }}
+                            style={{
+                              width: `${Math.min((week.count / 2000) * 100, 100)}%`,
+                            }}
                           />
                         </div>
                       </div>
@@ -1246,7 +1586,9 @@ function DashboardInner() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12">
                     <XCircleIcon className="h-12 w-12 text-gray-300 dark:text-gray-700 mb-2" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Няма данни</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Няма данни
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -1264,7 +1606,9 @@ function DashboardInner() {
                   <CardTitle className="text-base font-bold text-gray-900 dark:text-gray-100">
                     Най-добри паралелки
                   </CardTitle>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Топ и дъно 3</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Топ и дъно 3
+                  </p>
                 </div>
               </div>
             </CardHeader>
@@ -1274,7 +1618,9 @@ function DashboardInner() {
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="h-1 w-1 rounded-full bg-blue-500"></div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Среден успех</h3>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      Среден успех
+                    </h3>
                   </div>
                   <div className="space-y-2">
                     {classesByAverage?.top.map((cls, idx) => (
@@ -1309,7 +1655,9 @@ function DashboardInner() {
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold">
-                            {classesByAverage.top.length + classesByAverage.bottom.length - idx}
+                            {classesByAverage.top.length +
+                              classesByAverage.bottom.length -
+                              idx}
                           </div>
                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {cls.className}
@@ -1327,7 +1675,9 @@ function DashboardInner() {
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="h-1 w-1 rounded-full bg-green-500"></div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Отсъствия</h3>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      Отсъствия
+                    </h3>
                   </div>
                   <div className="space-y-2">
                     {classesByAbsences?.top.map((cls, idx) => (
@@ -1362,7 +1712,9 @@ function DashboardInner() {
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold">
-                            {classesByAbsences.top.length + classesByAbsences.bottom.length - idx}
+                            {classesByAbsences.top.length +
+                              classesByAbsences.bottom.length -
+                              idx}
                           </div>
                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {cls.className}
@@ -1390,7 +1742,9 @@ function DashboardInner() {
                   <CardTitle className="text-base font-bold text-gray-900 dark:text-gray-100">
                     Най-добри ученици
                   </CardTitle>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Топ и дъно 3</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Топ и дъно 3
+                  </p>
                 </div>
               </div>
             </CardHeader>
@@ -1400,7 +1754,9 @@ function DashboardInner() {
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="h-1 w-1 rounded-full bg-purple-500"></div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Среден успех</h3>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      Среден успех
+                    </h3>
                   </div>
                   <div className="space-y-2">
                     {studentsByAverage?.top.map((student, idx) => (
@@ -1440,7 +1796,9 @@ function DashboardInner() {
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold flex-shrink-0">
-                            {studentsByAverage.top.length + studentsByAverage.bottom.length - idx}
+                            {studentsByAverage.top.length +
+                              studentsByAverage.bottom.length -
+                              idx}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -1463,7 +1821,9 @@ function DashboardInner() {
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="h-1 w-1 rounded-full bg-pink-500"></div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Натрупани отсъствия</h3>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      Натрупани отсъствия
+                    </h3>
                   </div>
                   <div className="space-y-2">
                     {studentsByAbsences?.top.map((student, idx) => (
@@ -1503,7 +1863,9 @@ function DashboardInner() {
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex-shrink-0">
-                            {studentsByAbsences.top.length + studentsByAbsences.bottom.length - idx}
+                            {studentsByAbsences.top.length +
+                              studentsByAbsences.bottom.length -
+                              idx}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -1567,7 +1929,9 @@ function DashboardInner() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12">
                   <FileTextIcon className="h-12 w-12 text-gray-300 dark:text-gray-700 mb-2" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Няма данни за учители</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Няма данни за учители
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -1640,28 +2004,36 @@ function PreAuthLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)" }}>
-      {/* Decorative circles */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
-      <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/5 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2"></div>
-      
-      <div className="text-center space-y-6 max-w-md px-4 relative z-10">
-        <div className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center">
-          <img src="https://cdn.hercules.app/file_zlkzSgirA99Xq9EgGI6z0r2U" alt="Logo" className="w-full h-full object-contain" />
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_58%,rgba(107,76,255,0.22),transparent_36%),linear-gradient(180deg,#ffffff_0%,#f8f6ff_35%,#ded8ff_100%)] px-4 py-10">
+      <div className="relative z-10 w-full max-w-3xl text-center">
+        <img
+          src="/academo-logo.png"
+          alt="Академо"
+          className="mx-auto h-12 w-auto"
+        />
+        <div className="mx-auto mt-7 inline-flex items-center gap-3 rounded-full border border-[#e8e8f1] bg-white p-1 pr-5 font-black text-[#33343a] shadow-[0_10px_26px_rgba(40,35,90,0.08)]">
+          <span className="rounded-full bg-[#111] px-4 py-2 text-white">
+            Достъп
+          </span>
+          Собствена дигитална среда
         </div>
-        <h1 className="text-5xl font-bold tracking-tight text-white">
-          ACADEMO
+        <h1 className="mt-7 text-4xl font-black leading-none text-[#0e0e12] md:text-5xl">
+          Вход в Академо
         </h1>
-        <p className="text-xl text-white/90">
+        <p className="mx-auto mt-4 max-w-xl text-base font-bold leading-7 text-[#62636d]">
           {hasUsers ? "Влезте в платформата" : "Създайте първия администратор"}
         </p>
-        <Card className="border-white/20 bg-white/95 text-left shadow-2xl backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95">
-          <CardContent className="space-y-5 p-6">
+        <Card className="academo-soft-shadow mt-8 rounded-[34px] border border-white/80 bg-white/86 text-left backdrop-blur-xl">
+          <CardContent className="space-y-5 p-6 md:p-8">
             {hasUsers ? (
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div className="space-y-2">
-                  <Label htmlFor="login-username">Потребителско име или имейл</Label>
+                  <Label
+                    htmlFor="login-username"
+                    className="font-black text-[#62636d]"
+                  >
+                    Потребителско име или имейл
+                  </Label>
                   <Input
                     id="login-username"
                     value={loginForm.username}
@@ -1673,10 +2045,16 @@ function PreAuthLogin() {
                     }
                     autoComplete="username"
                     placeholder="Например director@school.bg"
+                    className="h-14 rounded-2xl border-[#e3e3ec] bg-white text-base font-bold shadow-none focus-visible:ring-[#6b4cff]/20"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Парола</Label>
+                  <Label
+                    htmlFor="login-password"
+                    className="font-black text-[#62636d]"
+                  >
+                    Парола
+                  </Label>
                   <Input
                     id="login-password"
                     type="password"
@@ -1688,11 +2066,12 @@ function PreAuthLogin() {
                       }))
                     }
                     autoComplete="current-password"
+                    className="h-14 rounded-2xl border-[#e3e3ec] bg-white text-base font-bold shadow-none focus-visible:ring-[#6b4cff]/20"
                   />
                 </div>
                 <Button
                   type="submit"
-                  className="h-12 w-full text-base font-semibold"
+                  className="h-14 w-full rounded-full bg-[#111] text-lg font-black text-white shadow-[0_16px_38px_rgba(0,0,0,0.22)] hover:bg-[#222]"
                   disabled={isLoading}
                 >
                   {isLoading ? "Влизане..." : "Вход"}
@@ -1703,9 +2082,9 @@ function PreAuthLogin() {
                 <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40">
                   <InfoIcon className="h-4 w-4" />
                   <AlertDescription>
-                    Това е първоначалната настройка на новата инсталация. След този
-                    профил ще можеш да създаваш останалите потребители, класове и
-                    разписания.
+                    Това е първоначалната настройка на новата инсталация. След
+                    този профил ще можеш да създаваш останалите потребители,
+                    класове и разписания.
                   </AlertDescription>
                 </Alert>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -1784,7 +2163,9 @@ function PreAuthLogin() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="setup-confirmPassword">Потвърди паролата</Label>
+                    <Label htmlFor="setup-confirmPassword">
+                      Потвърди паролата
+                    </Label>
                     <Input
                       id="setup-confirmPassword"
                       type="password"
@@ -1801,7 +2182,7 @@ function PreAuthLogin() {
                 </div>
                 <Button
                   type="submit"
-                  className="h-12 w-full text-base font-semibold"
+                  className="h-14 w-full rounded-full bg-[#111] text-lg font-black text-white shadow-[0_16px_38px_rgba(0,0,0,0.22)] hover:bg-[#222]"
                   disabled={isLoading}
                 >
                   {isLoading ? "Създаване..." : "Създай първия администратор"}
@@ -1813,7 +2194,7 @@ function PreAuthLogin() {
               <Button
                 type="button"
                 variant="secondary"
-                className="h-12 w-full bg-white/20 text-blue-700 hover:bg-white/40 dark:text-white"
+                className="h-12 w-full rounded-full bg-[#f1f2f7] font-black text-[#6b4cff] hover:bg-[#e9e7ff]"
                 onClick={() => {
                   localStorage.setItem("academo.previewAuth", "true");
                   window.location.reload();
@@ -1849,12 +2230,14 @@ function AuthLoadingWithTimeout() {
       // Clear all stored auth data
       sessionStorage.clear();
       localStorage.clear();
-      
+
       // Clear all cookies
-      document.cookie.split(";").forEach(function(c) { 
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      document.cookie.split(";").forEach(function (c) {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
-      
+
       // Force reload to restart auth flow
       window.location.href = "/";
     } catch (error) {
@@ -1892,7 +2275,7 @@ function AuthLoadingWithTimeout() {
               </li>
             </ul>
             <div className="pt-4 space-y-3">
-              <Button 
+              <Button
                 onClick={handleClearAndRetry}
                 disabled={isClearing}
                 className="w-full"
@@ -1907,7 +2290,8 @@ function AuthLoadingWithTimeout() {
                 )}
               </Button>
               <p className="text-xs text-muted-foreground">
-                Ако проблемът продължава, опитайте с друг браузър или изчистете данните на браузъра за този сайт.
+                Ако проблемът продължава, опитайте с друг браузър или изчистете
+                данните на браузъра за този сайт.
               </p>
             </div>
           </CardContent>
@@ -1919,7 +2303,9 @@ function AuthLoadingWithTimeout() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-blue-50 to-indigo-100">
       <Skeleton className="h-96 w-96 rounded-xl" />
-      <p className="text-sm text-muted-foreground animate-pulse">Зареждане...</p>
+      <p className="text-sm text-muted-foreground animate-pulse">
+        Зареждане...
+      </p>
     </div>
   );
 }
@@ -1936,8 +2322,10 @@ function WrongEmailScreen() {
       localStorage.clear();
 
       // Clear cookies
-      document.cookie.split(";").forEach(function(c) {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      document.cookie.split(";").forEach(function (c) {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
 
       // Remove user from OIDC client (signs out locally)
@@ -1951,7 +2339,12 @@ function WrongEmailScreen() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)" }}>
+    <div
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)",
+      }}
+    >
       <div className="absolute top-0 left-0 w-72 h-72 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
 
@@ -1969,10 +2362,15 @@ function WrongEmailScreen() {
         <CardContent className="text-center space-y-6 pb-8">
           <div className="space-y-2">
             <p className="text-muted-foreground">
-              Имейл адресът <span className="font-semibold text-foreground">{user?.profile?.email}</span> не е регистриран в системата.
+              Имейл адресът{" "}
+              <span className="font-semibold text-foreground">
+                {user?.profile?.email}
+              </span>{" "}
+              не е регистриран в системата.
             </p>
             <p className="text-sm text-muted-foreground">
-              Моля, опитайте отново с имейла, с който сте регистрирани в училището.
+              Моля, опитайте отново с имейла, с който сте регистрирани в
+              училището.
             </p>
           </div>
 
@@ -1980,7 +2378,9 @@ function WrongEmailScreen() {
             onClick={handleTryAgain}
             disabled={isLoading}
             className="w-full h-12 text-base font-semibold"
-            style={{ background: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)" }}
+            style={{
+              background: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)",
+            }}
           >
             {isLoading ? "Изчакайте..." : "Опитай с друг имейл"}
           </Button>
@@ -2036,9 +2436,9 @@ function PreviewDashboard({ onSignOut }: { onSignOut: () => void }) {
         <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40">
           <InfoIcon className="h-5 w-5 text-blue-600 dark:text-blue-300" />
           <AlertDescription>
-            Това е реалният layout на платформата в локален preview режим, без login.
-            Менютата са отключени като demo админ, но страниците, които четат реални
-            данни, ще станат пълни едва след връзка с Convex база.
+            Това е реалният layout на платформата в локален preview режим, без
+            login. Менютата са отключени като demo админ, но страниците, които
+            четат реални данни, ще станат пълни едва след връзка с Convex база.
           </AlertDescription>
         </Alert>
 
@@ -2053,19 +2453,25 @@ function PreviewDashboard({ onSignOut }: { onSignOut: () => void }) {
           <Card>
             <CardContent className="p-5">
               <div className="text-3xl font-bold">6</div>
-              <div className="text-sm text-muted-foreground">Основни модула</div>
+              <div className="text-sm text-muted-foreground">
+                Основни модула
+              </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-5">
               <div className="text-3xl font-bold">119</div>
-              <div className="text-sm text-muted-foreground">Страници в проекта</div>
+              <div className="text-sm text-muted-foreground">
+                Страници в проекта
+              </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-5">
               <div className="text-3xl font-bold">55</div>
-              <div className="text-sm text-muted-foreground">Backend модула</div>
+              <div className="text-sm text-muted-foreground">
+                Backend модула
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -2085,7 +2491,9 @@ function PreviewDashboard({ onSignOut }: { onSignOut: () => void }) {
                   <div className={`h-2 bg-gradient-to-r ${module.color}`} />
                   <div className="space-y-4 p-5">
                     <div className="flex items-center gap-3">
-                      <div className={`rounded-lg bg-gradient-to-br ${module.color} p-3 text-white`}>
+                      <div
+                        className={`rounded-lg bg-gradient-to-br ${module.color} p-3 text-white`}
+                      >
                         <Icon className="h-5 w-5" />
                       </div>
                       <h2 className="text-lg font-semibold">{module.title}</h2>
@@ -2106,13 +2514,13 @@ function PreviewDashboard({ onSignOut }: { onSignOut: () => void }) {
           </CardHeader>
           <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
             <p>
-              Вече не гледаш отделен пресъздаден login екран, а истинската рамка на
-              приложението: sidebar, header, модулите и навигацията от кода.
+              Вече не гледаш отделен пресъздаден login екран, а истинската рамка
+              на приложението: sidebar, header, модулите и навигацията от кода.
             </p>
             <p>
-              Това не доказва още, че всяка функция записва данни, защото за това
-              трябва работеща база. Но показва как е организирана самата платформа
-              и позволява да се обхождат реалните страници.
+              Това не доказва още, че всяка функция записва данни, защото за
+              това трябва работеща база. Но показва как е организирана самата
+              платформа и позволява да се обхождат реалните страници.
             </p>
           </CardContent>
         </Card>
@@ -2133,8 +2541,8 @@ export default function Index() {
       <Layout>
         <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
           <span>
-            Preview режим без login. Това е реалното начално dashboard с примерни данни,
-            докато няма свързана Convex база.
+            Preview режим без login. Това е реалното начално dashboard с
+            примерни данни, докато няма свързана Convex база.
           </span>
           <Button
             variant="outline"
