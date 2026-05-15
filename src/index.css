@@ -165,18 +165,6 @@
     -webkit-backdrop-filter: blur(24px) saturate(1.28);
   }
 
-  .academo-sidebar {
-    border-color: rgba(107, 76, 255, 0.14) !important;
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.9) 0%,
-        rgba(248, 244, 255, 0.86) 42%,
-        rgba(255, 238, 242, 0.82) 100%
-      ),
-      #fff !important;
-  }
-
   .academo-sidebar nav > div > div > a,
   .academo-sidebar nav > div > div > button,
   .academo-sidebar .bg-sky-100 a,
@@ -187,7 +175,7 @@
     width: calc(100% - 24px);
     border-radius: 18px !important;
     border: 1px solid transparent;
-    background: rgba(255, 255, 255, 0.52);
+    background: rgba(255, 255, 255, 0.56);
     color: #55565d !important;
     font-weight: 800 !important;
   }
@@ -199,19 +187,15 @@
   .academo-sidebar .bg-sky-50 a:hover,
   .academo-sidebar .bg-sky-50 button:hover {
     border-color: rgba(255, 255, 255, 0.9);
-    background: linear-gradient(
-      135deg,
-      rgba(107, 76, 255, 0.12),
-      rgba(255, 39, 54, 0.1)
-    ) !important;
+    background: rgba(241, 242, 247, 0.9) !important;
     color: #111 !important;
     box-shadow: 0 14px 34px rgba(38, 30, 90, 0.08);
   }
 
   .academo-sidebar a.bg-red-500 {
-    background: linear-gradient(135deg, #6b4cff 0%, #ff2736 100%) !important;
+    background: #111 !important;
     color: #fff !important;
-    box-shadow: 0 18px 38px rgba(107, 76, 255, 0.24);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.16);
   }
 
   .academo-sidebar .bg-sky-100,
@@ -223,8 +207,7 @@
     background: linear-gradient(
       145deg,
       rgba(255, 255, 255, 0.78) 0%,
-      rgba(246, 241, 255, 0.64) 54%,
-      rgba(255, 239, 242, 0.56) 100%
+      rgba(244, 242, 255, 0.58) 100%
     ) !important;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.86),
@@ -240,7 +223,7 @@
     margin: 4px 8px;
     width: calc(100% - 16px);
     border-radius: 16px !important;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.55);
   }
 
   .academo-sidebar .bg-sky-100 .bg-sky-300,
@@ -249,11 +232,7 @@
   .academo-sidebar .bg-sky-50 .hover\:bg-sky-300:hover {
     border-color: rgba(255, 255, 255, 0.92) !important;
     border-radius: 16px !important;
-    background: linear-gradient(
-      135deg,
-      rgba(107, 76, 255, 0.14),
-      rgba(255, 39, 54, 0.1)
-    ) !important;
+    background: rgba(255, 255, 255, 0.7) !important;
     color: #111 !important;
     box-shadow: 0 14px 34px rgba(38, 30, 90, 0.08);
   }
