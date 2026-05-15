@@ -1730,16 +1730,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <DropdownContext.Provider value={{ openDropdown, setOpenDropdown }}>
       <div className="academo-sidebar flex h-full flex-col border-r border-[#ececf4] bg-white">
         {/* Logo Header */}
-        <div className="px-6 pb-5 pt-6">
+        <div className="px-6 pb-6 pt-6">
           <img src="/academo-logo.png" alt="Academo" className="h-9 w-auto" />
-          <div className="mt-6 rounded-[28px] bg-[linear-gradient(145deg,#ffffff_0%,#f1efff_100%)] p-4 shadow-[0_18px_42px_rgba(38,30,90,0.08)]">
-            <p className="text-xs font-black uppercase text-[#8a8b92]">
-              Днес в Академо
-            </p>
-            <p className="mt-2 text-2xl font-black leading-none text-[#0e0e12]">
-              Всичко важно е пред екипа
-            </p>
-          </div>
         </div>
 
         <nav className="academo-scrollbar flex-1 overflow-y-auto pb-5">
