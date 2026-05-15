@@ -78,7 +78,7 @@ function AcademoMetricCard({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm font-black text-[#686974]">{title}</p>
-            <div className="mt-4 text-4xl font-black leading-none text-[#0e0e12] lg:text-5xl">
+            <div className="academo-count-value mt-4 text-4xl font-black leading-none text-[#0e0e12] lg:text-5xl">
               {value}
             </div>
             <p className="mt-2 text-sm font-bold text-[#8a8b92]">{detail}</p>
@@ -94,52 +94,69 @@ function AcademoMetricCard({
   );
 }
 
-// Counter animation hook with easing
-function useCountUp(end: number, duration: number = 1000) {
+// Counter animation hook with a quick start and a slow premium finish.
+function useCountUp(end: number, duration: number = 1450, precision = 0) {
   const [count, setCount] = useState(0);
-  const countRef = useRef(0);
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (end === 0) {
+    const target = Number.isFinite(end) ? end : 0;
+
+    if (target === 0) {
       setCount(0);
       return;
     }
 
-    // Easing function: fast at start, slow at end (last 20%)
-    const easeOutCubic = (t: number): number => {
-      // For the first 80%, progress linearly but faster
-      if (t < 0.8) {
-        return t / 0.8; // Map 0-0.8 to 0-1
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) {
+      setCount(target);
+      return;
+    }
+
+    let frameId = 0;
+
+    const roundForDisplay = (value: number) => {
+      if (precision > 0) {
+        return Number(value.toFixed(precision));
       }
-      // For the last 20%, slow down using ease-out cubic
-      const lastPart = (t - 0.8) / 0.2; // Map 0.8-1 to 0-1
-      return 1 - Math.pow(1 - lastPart, 3);
+      return Math.floor(value);
+    };
+
+    const easeOutPremium = (progress: number) => {
+      if (progress < 0.72) {
+        const accelerated = progress / 0.72;
+        return (1 - Math.pow(1 - accelerated, 3)) * 0.9;
+      }
+
+      const settle = (progress - 0.72) / 0.28;
+      return 0.9 + (1 - Math.pow(1 - settle, 4)) * 0.1;
     };
 
     const animate = (timestamp: number) => {
       if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const linearProgress = Math.min(
+      const progress = Math.min(
         (timestamp - startTimeRef.current) / duration,
         1,
       );
 
-      // Apply easing function
-      const easedProgress = easeOutCubic(linearProgress);
-      const currentCount = Math.floor(easedProgress * end);
-      countRef.current = currentCount;
-      setCount(currentCount);
+      const easedProgress = easeOutPremium(progress);
+      setCount(roundForDisplay(target * easedProgress));
 
-      if (linearProgress < 1) {
-        requestAnimationFrame(animate);
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
       } else {
-        setCount(end);
+        setCount(target);
       }
     };
 
     startTimeRef.current = null;
-    requestAnimationFrame(animate);
-  }, [end, duration]);
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [end, duration, precision]);
 
   return count;
 }
@@ -507,25 +524,26 @@ function DashboardInner() {
       (childReviews?.praises?.length || 0),
   };
 
-  // Animated counters (20% faster) - use child data for parents
+  // Animated counters with a quick start and slower final settling.
   const animatedGrade = useCountUp(
     isParent ? parentChildStats.averageGrade : stats?.averageGrade || 0,
-    1200,
+    1550,
+    2,
   );
   const animatedTotalGrades = useCountUp(
     isParent ? parentChildStats.totalGrades : stats?.totalGrades || 0,
-    1200,
+    1500,
   );
   const animatedAbsences = useCountUp(
     isParent ? parentChildStats.totalAbsences : stats?.totalAbsences || 0,
-    1200,
+    1450,
   );
   const animatedRemarks = useCountUp(
     isParent ? parentChildStats.totalRemarks : stats?.totalRemarks || 0,
-    1200,
+    1450,
   );
-  const animatedEvents = useCountUp(stats?.upcomingEvents || 0, 1200);
-  const animatedLessonsPercentage = useCountUp(lessonsPercentage || 0, 1200);
+  const animatedEvents = useCountUp(stats?.upcomingEvents || 0, 1400);
+  const animatedLessonsPercentage = useCountUp(lessonsPercentage || 0, 1450);
 
   // Get selected child's name for display
   const selectedChild = parentChildren?.find(

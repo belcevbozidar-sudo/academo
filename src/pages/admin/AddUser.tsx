@@ -101,7 +101,7 @@ export default function AddUserForm({ onSuccess }: AddUserFormProps) {
     identifierType: "egn",
     birthDate: "",
     birthPlace: "",
-    citizenship: "България",
+    citizenship: "",
     gender: "male",
     phone: "+359",
     email: "",
@@ -248,10 +248,10 @@ export default function AddUserForm({ onSuccess }: AddUserFormProps) {
         middleName: formData.middleName || undefined,
         lastName: formData.lastName,
         identifier: formData.identifier,
-        identifierType: formData.identifierType,
+        identifierType: "egn",
         birthDate: formData.birthDate || undefined,
         birthPlace: formData.birthPlace || undefined,
-        citizenship: formData.citizenship || undefined,
+        citizenship: undefined,
         gender: formData.gender,
         phone: formData.phone,
         email: formData.email,
@@ -410,21 +410,7 @@ export default function AddUserForm({ onSuccess }: AddUserFormProps) {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="identifierType">Тип идентификатор</Label>
-                <Select
-                  value={formData.identifierType}
-                  onValueChange={(value: "egn" | "lnch" | "other") =>
-                    setFormData({ ...formData, identifierType: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="egn">ЕГН</SelectItem>
-                    <SelectItem value="lnch">ЛНЧ</SelectItem>
-                    <SelectItem value="other">Друго</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input id="identifierType" value="ЕГН" readOnly className="bg-muted font-medium" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="identifier">Идентификатор *</Label>
@@ -437,7 +423,7 @@ export default function AddUserForm({ onSuccess }: AddUserFormProps) {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="birthDate">
                   Дата на раждане {formData.role === "student" && "*"}
@@ -456,14 +442,6 @@ export default function AddUserForm({ onSuccess }: AddUserFormProps) {
                   value={formData.birthPlace}
                   onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
                   placeholder="София"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="citizenship">Гражданство</Label>
-                <Input
-                  id="citizenship"
-                  value={formData.citizenship}
-                  onChange={(e) => setFormData({ ...formData, citizenship: e.target.value })}
                 />
               </div>
             </div>
