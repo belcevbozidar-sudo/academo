@@ -19,6 +19,40 @@ export const seedDemoData = mutation({
       throw new ConvexError("Invalid demo seed confirmation");
     }
 
+    // CLEAN UP OLD DATA to start fresh and avoid duplicates
+    const oldGrades = await ctx.db.query("grades").collect();
+    for (const g of oldGrades) { await ctx.db.delete(g._id); }
+
+    const oldAttendance = await ctx.db.query("attendance").collect();
+    for (const a of oldAttendance) { await ctx.db.delete(a._id); }
+
+    const oldRemarks = await ctx.db.query("remarks").collect();
+    for (const r of oldRemarks) { await ctx.db.delete(r._id); }
+
+    const oldBadges = await ctx.db.query("badges").collect();
+    for (const b of oldBadges) { await ctx.db.delete(b._id); }
+
+    const oldLessons = await ctx.db.query("lessons").collect();
+    for (const l of oldLessons) { await ctx.db.delete(l._id); }
+
+    const oldAssignments = await ctx.db.query("assignments").collect();
+    for (const a of oldAssignments) { await ctx.db.delete(a._id); }
+
+    const oldEvents = await ctx.db.query("events").collect();
+    for (const ev of oldEvents) { await ctx.db.delete(ev._id); }
+
+    const oldParentMeetings = await ctx.db.query("parentMeetings").collect();
+    for (const pm of oldParentMeetings) { await ctx.db.delete(pm._id); }
+
+    const oldWeeklySchedules = await ctx.db.query("weeklySchedules").collect();
+    for (const ws of oldWeeklySchedules) { await ctx.db.delete(ws._id); }
+
+    const oldSchedules = await ctx.db.query("schedules").collect();
+    for (const s of oldSchedules) { await ctx.db.delete(s._id); }
+
+    const oldClassSubjects = await ctx.db.query("classSubjects").collect();
+    for (const cs of oldClassSubjects) { await ctx.db.delete(cs._id); }
+
     const now = Date.now();
     const allSchools = await ctx.db.query("schools").collect();
     let school = allSchools.find((item) => item.neispuoCode === "DEMO-VECTOR-001");
@@ -119,9 +153,17 @@ export const seedDemoData = mutation({
         (user) => user.username === input.username || user.email === input.email,
       );
       if (existing) {
-        if (!existing.schoolId) {
-          await ctx.db.patch(existing._id, { schoolId });
-        }
+        await ctx.db.patch(existing._id, {
+          schoolId,
+          password: DEMO_PASSWORD_HASH,
+          role: input.role,
+          roles: input.roles ?? [input.role],
+          isActive: true,
+          isDeleted: false,
+          status: "active",
+          positionName: input.positionName,
+          teachingSubjects: input.teachingSubjects,
+        });
         return existing._id;
       }
 
@@ -490,17 +532,18 @@ export const seedDemoData = mutation({
     const codeTeacherId = teachers[teacherUsers[2]];
     const designTeacherId = teachers[teacherUsers[3]];
     const scienceTeacherId = teachers[teacherUsers[4]];
+    const directorTeacherId = teachers[directorId];
 
     const classSubjectPairs = [
       [juniorClassId, subjectIds["Математика"], mathTeacherId, 4],
       [juniorClassId, subjectIds["Английски език"], englishTeacherId, 3],
       [juniorClassId, subjectIds["Роботика"], codeTeacherId, 2],
       [teenClassId, subjectIds["Програмиране"], codeTeacherId, 4],
-      [teenClassId, subjectIds["Дизайн мислене"], designTeacherId, 2],
+      [teenClassId, subjectIds["Дизайн мислене"], directorTeacherId, 2],
       [teenClassId, subjectIds["Природни науки"], scienceTeacherId, 3],
       [examClassId, subjectIds["Английски език"], englishTeacherId, 5],
       [examClassId, subjectIds["Презентационни умения"], designTeacherId, 2],
-      [examClassId, subjectIds["Предприемачество"], designTeacherId, 2],
+      [examClassId, subjectIds["Предприемачество"], directorTeacherId, 2],
     ] as const;
 
     for (const [classId, subjectId, teacherId, hoursPerWeek] of classSubjectPairs) {
@@ -584,38 +627,352 @@ export const seedDemoData = mutation({
       }
     }
 
-    const sampleStudents = studentRecords.slice(0, 8);
-    for (const student of sampleStudents) {
-      const classSubject = classSubjectPairs.find((pair) => pair[0] === student.classId);
-      if (!classSubject) continue;
-      const existingGrade = (await ctx.db
-        .query("grades")
-        .withIndex("by_student", (q) => q.eq("studentId", student.studentId))
-        .collect()).find((grade) => grade.subjectId === classSubject[1]);
-      if (!existingGrade) {
-        await ctx.db.insert("grades", {
-          studentId: student.studentId,
-          classId: student.classId,
-          subjectId: classSubject[1],
-          teacherId: classSubject[2],
-          value: student.studentId.length % 2 === 0 ? 6 : 5,
-          type: "current",
-          date: date("2026-05-06"),
-          notes: "Демо оценка за активно участие",
-          termId: secondTermId,
-          gradeType: "Проект",
+
+
+    // TOPICS MAP FOR LESSONS
+    const topicsMap: Record<string, string[]> = {
+      "Математика": [
+        "Увод в уравненията от първа степен",
+        "Решаване на линейни уравнения с едно неизвестно",
+        "Текстови задачи с линейни уравнения",
+        "Геометрични фигури и тела - преговор",
+        "Лице на повърхнина и обем на куб"
+      ],
+      "Английски език": [
+        "Present Perfect Simple vs Past Simple",
+        "Reading Comprehension: Science and Technology",
+        "Vocabulary Builder: Environment and Climate",
+        "Writing a formal email / business letter",
+        "Speaking practice: Presenting arguments"
+      ],
+      "Роботика": [
+        "Основни сензори и контролери в роботиката",
+        "Програмиране на сензор за разстояние",
+        "Конструиране на движеща се база (шаси)",
+        "Следване на черна линия с два фотосензора",
+        "Презентация на финалните роботизирани проекти"
+      ],
+      "Програмиране": [
+        "Основни структури от данни: Масиви и списъци",
+        "Контролни структури и вложени цикли в JavaScript",
+        "Работа с функции и асинхронен код",
+        "Основи на Обектно-ориентираното програмиране",
+        "Поправка на бъгове и тестване на код (Debugging)"
+      ],
+      "Дизайн мислене": [
+        "Фаза 1: Емпатия и интервюиране на потребители",
+        "Фаза 2: Дефиниране на проблема и нуждите",
+        "Фаза 3: Генериране на идеи (Brainstorming)",
+        "Фаза 4: Бързо прототипиране с достъпни материали",
+        "Фаза 5: Тестване на прототипите и обратна връзка"
+      ],
+      "Природни науки": [
+        "Строеж на атома и периодична таблица",
+        "Физични и химични свойства на водата",
+        "Клетъчна структура на живите организми",
+        "Екосистеми и хранителни вериги",
+        "Възобновяеми източници на енергия"
+      ],
+      "Презентационни умения": [
+        "Структуриране на презентация: Начало, среда, край",
+        "Дизайн на слайдове и визуално въздействие",
+        "Контрол на гласа, темпото и езика на тялото",
+        "Справяне със сценична треска и трудна аудитория",
+        "Практическа сесия: Демо презентации и фийдбек"
+      ],
+      "Предприемачество": [
+        "Определяне на бизнес идея и целева аудитория",
+        "Основи на финансовото планиране и ценообразуване",
+        "Маркетингова стратегия и канали за дистрибуция",
+        "Писане на кратък бизнес план (One-Pager)",
+        "Pitching пред инвеститори - подготовка и презентация"
+      ]
+    };
+
+    // SEED LESSONS, GRADES, ATTENDANCE, REMARKS, BADGES
+    const gradesTypes = ["Тест", "Контролна работа", "Проект", "Устно изпитване", "Домашно"];
+    const gradesNotes = [
+      "Отлична работа и задълбочени познания.",
+      "Много добър резултат. Обърнете внимание на детайлите.",
+      "Страхотно представяне при презентирането.",
+      "Активно участие и отлични аргументи.",
+      "Добра подготовка, но има леки пропуски."
+    ];
+
+    const praises = [
+      "Изключително активно участие в часа и помощ на съучениците.",
+      "Оригинално творческо решение на практическата задача.",
+      "Отлично подготвено и представено домашно.",
+      "Демонстрира лидерски умения по време на работата в екип.",
+      "Много висока прилежност и старание в учебния процес."
+    ];
+
+    const warnings = [
+      "Разсейване с мобилен телефон по време на обяснение на новия материал.",
+      "Закъснение за учебния час без уважителна причина.",
+      "Липса на подготовка и домашна работа за часа.",
+      "Шумно поведение и нарушаване на дисциплината в класната стая.",
+      "Липса на необходимите учебни материали за практическия час."
+    ];
+
+    const praiseBadges = [
+      "active_participation",
+      "excellent_presentation",
+      "completed_task",
+      "curiosity",
+      "diligence",
+      "progress",
+      "communication",
+      "sharp_mind",
+      "concentration",
+      "creativity",
+      "teamwork",
+      "leadership"
+    ] as const;
+
+    const warningBadges = [
+      "bad_discipline",
+      "lack_of_attention",
+      "unprepared",
+      "no_homework",
+      "no_materials",
+      "late",
+      "absence"
+    ] as const;
+
+    // Seed 5 lessons per class-subject pair
+    for (const [classId, subjectId, teacherId] of classSubjectPairs) {
+      const subject = await ctx.db.get(subjectId);
+      const subjectName = subject?.name ?? "Математика";
+      const topics = topicsMap[subjectName] || ["Урок по " + subjectName];
+
+      for (let i = 0; i < 5; i++) {
+        const lessonDate = now - (10 - i * 2) * 24 * 60 * 60 * 1000;
+        const lessonId = await ctx.db.insert("lessons", {
+          classId,
+          subjectId,
+          teacherId,
+          date: lessonDate,
+          periodIndex: (i % 4) + 1,
+          topic: topics[i % topics.length],
+          homework: i % 2 === 0 ? `Прочетете и изпълнете упражнение ${i + 1} от учебника.` : undefined,
+          hasUnsavedChanges: false,
+          isTaken: true,
+          educationType: "inPerson",
         });
-        await ctx.db.insert("attendance", {
-          studentId: student.studentId,
-          classId: student.classId,
-          subjectId: classSubject[1],
-          teacherId: classSubject[2],
-          date: date("2026-05-07"),
-          period: 2,
-          status: "present",
-          notes: "Демо присъствие",
+
+        // Seed attendance for all students in this class
+        const classStudents = studentRecords.filter((student) => student.classId === classId);
+        for (const student of classStudents) {
+          // 85% present, 5% late, 5% excused, 5% absent
+          const rand = Math.random();
+          let status: "present" | "absent" | "late" | "excused" = "present";
+          let notes: string | undefined;
+
+          if (rand < 0.05) {
+            status = "absent";
+            notes = "Отсъства по семейни причини";
+          } else if (rand < 0.10) {
+            status = "late";
+            notes = "Закъснение 5 минути";
+          } else if (rand < 0.15) {
+            status = "excused";
+            notes = "Медицинска бележка";
+          }
+
+          await ctx.db.insert("attendance", {
+            studentId: student.studentId,
+            classId,
+            subjectId,
+            teacherId,
+            date: lessonDate,
+            period: (i % 4) + 1,
+            status,
+            notes,
+          });
+
+          // Seed grades for students (about 40% chance per student per lesson, ensuring multiple grades per student)
+          if (status === "present" && Math.random() < 0.4) {
+            const gradeValValue = Math.random();
+            let val = 6;
+            if (gradeValValue < 0.4) val = 6;
+            else if (gradeValValue < 0.75) val = 5;
+            else if (gradeValValue < 0.92) val = 4;
+            else if (gradeValValue < 0.97) val = 3;
+            else val = 2;
+
+            await ctx.db.insert("grades", {
+              studentId: student.studentId,
+              classId,
+              subjectId,
+              teacherId,
+              value: val,
+              type: "current",
+              date: lessonDate,
+              notes: gradesNotes[Math.floor(Math.random() * gradesNotes.length)],
+              termId: secondTermId,
+              gradeType: gradesTypes[Math.floor(Math.random() * gradesTypes.length)],
+              lessonId,
+            });
+          }
+
+          // Seed remarks (10% chance)
+          if (status === "present" && Math.random() < 0.12) {
+            const isPraise = Math.random() < 0.75;
+            const content = isPraise
+              ? praises[Math.floor(Math.random() * praises.length)]
+              : warnings[Math.floor(Math.random() * warnings.length)];
+
+            await ctx.db.insert("remarks", {
+              studentId: student.studentId,
+              teacherId,
+              classId,
+              type: isPraise ? "praise" : "warning",
+              content,
+              date: lessonDate,
+              subjectId,
+            });
+          }
+
+          // Seed badges (15% chance)
+          if (status === "present" && Math.random() < 0.18) {
+            const isPraise = Math.random() < 0.8;
+            const type = isPraise
+              ? praiseBadges[Math.floor(Math.random() * praiseBadges.length)]
+              : warningBadges[Math.floor(Math.random() * warningBadges.length)];
+
+            await ctx.db.insert("badges", {
+              studentId: student.studentId,
+              teacherId,
+              lessonId,
+              type,
+              date: lessonDate,
+              notes: isPraise ? "Отлично справяне!" : "Моля, обърнете внимание.",
+            });
+          }
+        }
+      }
+
+      // Seed 2-3 assignments (homework/tasks) per class-subject
+      for (let j = 0; j < 2; j++) {
+        const assignedDate = now - (8 - j * 4) * 24 * 60 * 60 * 1000;
+        const dueDate = now + (2 + j * 3) * 24 * 60 * 60 * 1000;
+        await ctx.db.insert("assignments", {
+          classId,
+          subjectId,
+          teacherId,
+          title: j === 0 ? `Практическа задача по ${subjectName}` : `Тест върху текущата тема по ${subjectName}`,
+          type: j === 0 ? "Проект" : "Контролна работа",
+          description: j === 0 
+            ? "Разработете практически казус в групи по двама души и качете презентация." 
+            : "Преговор на предходните две теми от учебния материал.",
+          status: j === 0 ? "in_progress" : "pending",
+          dueDate,
+          assignedDate,
+          targetType: "class",
         });
       }
+    }
+
+    // Seed Events
+    const eventsList = [
+      {
+        title: "Демо отворен урок: AI и бъдещето на ученето",
+        description: "Събитие за родители и бъдещи курсисти с демонстрация на учебен процес.",
+        startDate: date("2026-06-12"),
+        endDate: date("2026-06-12") + 2 * 60 * 60 * 1000,
+        location: "Зала 3, Академия Вектор",
+        category: "Отворен урок",
+      },
+      {
+        title: "Панаир на науката и предприемачеството",
+        description: "Учениците представят своите проекти пред външно жури и гости.",
+        startDate: date("2026-06-18"),
+        endDate: date("2026-06-18") + 4 * 60 * 60 * 1000,
+        location: "Кампус Двор, Академия Вектор",
+        category: "Фестивал",
+      },
+      {
+        title: "Ден на самоуправлението",
+        description: "Учениците заемат позициите на учители и директор за один учебен ден.",
+        startDate: date("2026-06-23"),
+        endDate: date("2026-06-23") + 6 * 60 * 60 * 1000,
+        location: "Академия Вектор",
+        category: "Училищно събитие",
+      },
+      {
+        title: "Концерт на талантите в Академия Вектор",
+        description: "Музикални, танцови и артистични изпълнения от нашите талантливи ученици.",
+        startDate: date("2026-06-26"),
+        endDate: date("2026-06-26") + 3 * 60 * 60 * 1000,
+        location: "Актова зала, Академия Вектор",
+        category: "Концерт",
+      }
+    ];
+
+    for (const ev of eventsList) {
+      await ctx.db.insert("events", {
+        title: ev.title,
+        description: ev.description,
+        startDate: ev.startDate,
+        endDate: ev.endDate,
+        location: ev.location,
+        organizerId: directorId,
+        schoolId,
+        invitedUserIds: users.filter((user) => user.schoolId === schoolId).map((user) => user._id),
+        classIds,
+        category: ev.category,
+        academicYear,
+        isPaid: false,
+        isSchoolCalendar: true,
+        registrationDeadline: ev.startDate - 2 * 24 * 60 * 60 * 1000,
+        minRegistrants: 5,
+        maxRegistrants: 100,
+        locationAddress: "бул. Черни връх 42",
+        locationCity: "София",
+        locationDescription: "Демо кампус на Академия Вектор",
+      });
+    }
+
+    // Seed Parent-Teacher Meetings
+    const parentMeetingsList = [
+      {
+        classId: juniorClassId,
+        title: "Родителска среща: Обзор на първия срок и планове за втория",
+        startDate: date("2026-06-15") + 9 * 60 * 60 * 1000, // 18:00
+        endDate: date("2026-06-15") + 10.5 * 60 * 60 * 1000,
+        location: "Зала 101, Академия Вектор",
+        description: "Обсъждане на учебния напредък на пети клас и предстоящите STEM проекти.",
+      },
+      {
+        classId: teenClassId,
+        title: "Информационна среща за кариерно ориентиране и проекти",
+        startDate: date("2026-06-16") + 9 * 60 * 60 * 1000,
+        endDate: date("2026-06-16") + 10.5 * 60 * 60 * 1000,
+        location: "Зала 202, Академия Вектор",
+        description: "Презентация на възможностите за летни стажове и предприемачески инициативи.",
+      },
+      {
+        classId: examClassId,
+        title: "Подготовка за изпити и финално оценяване",
+        startDate: date("2026-06-17") + 9 * 60 * 60 * 1000,
+        endDate: date("2026-06-17") + 10.5 * 60 * 60 * 1000,
+        location: "Актова зала, Академия Вектор",
+        description: "Организация на пробните изпити и насоки за финалната подготовка на учениците.",
+      }
+    ];
+
+    for (const pm of parentMeetingsList) {
+      await ctx.db.insert("parentMeetings", {
+        classId: pm.classId,
+        title: pm.title,
+        startDate: pm.startDate,
+        endDate: pm.endDate,
+        createdById: directorId,
+        createdAt: now,
+        location: pm.location,
+        description: pm.description,
+      });
     }
 
     const existingActivities = await ctx.db
@@ -647,34 +1004,6 @@ export const seedDemoData = mutation({
         scheduleEndTime: "18:30",
         createdBy: directorId,
         createdAt: now,
-      });
-    }
-
-    const existingEvents = await ctx.db
-      .query("events")
-      .withIndex("by_school", (q) => q.eq("schoolId", schoolId))
-      .collect();
-    if (!existingEvents.some((event) => event.title === "Демо отворен урок: AI и бъдещето на ученето")) {
-      await ctx.db.insert("events", {
-        title: "Демо отворен урок: AI и бъдещето на ученето",
-        description: "Събитие за родители и бъдещи курсисти с демонстрация на учебен процес.",
-        startDate: date("2026-05-22"),
-        endDate: date("2026-05-22") + 2 * 60 * 60 * 1000,
-        location: "Зала 3, Академия Вектор",
-        organizerId: directorId,
-        schoolId,
-        invitedUserIds: users.filter((user) => user.schoolId === schoolId).map((user) => user._id),
-        classIds,
-        category: "Отворен урок",
-        academicYear,
-        isPaid: false,
-        isSchoolCalendar: true,
-        registrationDeadline: date("2026-05-20"),
-        minRegistrants: 5,
-        maxRegistrants: 60,
-        locationAddress: "бул. Черни връх 42",
-        locationCity: "София",
-        locationDescription: "Демо кампус на Академия Вектор",
       });
     }
 
@@ -765,3 +1094,6 @@ export const seedDemoData = mutation({
     };
   },
 });
+
+
+

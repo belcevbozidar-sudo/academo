@@ -2114,20 +2114,6 @@ function PreAuthLogin() {
                 </Button>
               </form>
             )}
-
-            <div className="border-t pt-4">
-              <Button
-                type="button"
-                variant="secondary"
-                className="h-12 w-full rounded-full bg-[#f1f2f7] font-black text-[#6b4cff] hover:bg-[#e9e7ff]"
-                onClick={() => {
-                  localStorage.setItem("academo.previewAuth", "true");
-                  window.location.reload();
-                }}
-              >
-                Влез с demo акаунт
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>

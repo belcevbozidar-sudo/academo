@@ -1186,10 +1186,10 @@ export default function UserProfile() {
                   ) : weeklySchedule ? (
                     <div className="overflow-x-auto -mx-2 sm:mx-0">
                       <div className="inline-block min-w-full align-middle">
-                        <table className="min-w-full border-collapse">
+                        <table className="w-full table-fixed border-collapse">
                           <thead>
                             <tr>
-                              <th className="border border-border bg-muted p-1 sm:p-2 text-xs sm:text-sm font-medium text-left sticky left-0 z-10">#</th>
+                              <th className="border border-border bg-muted p-1 sm:p-2 text-xs sm:text-sm font-medium text-center sticky left-0 z-10 w-10 sm:w-12">#</th>
                               {["Понеделник", "Вторник", "Сряда", "Четвъртък", "Петък"].map((day, idx) => {
                                 const dayNumber = idx + 1; // 1 = Monday, 2 = Tuesday, etc.
                                 const isToday = isTodayInWeek && todayDayOfWeek === dayNumber;
@@ -1199,7 +1199,7 @@ export default function UserProfile() {
                                 return (
                                   <th 
                                     key={idx} 
-                                    className={`border border-border p-1 sm:p-2 text-xs sm:text-sm font-medium text-center min-w-[120px] sm:min-w-[180px] ${
+                                    className={`border border-border p-1 sm:p-2 text-xs sm:text-sm font-medium text-center ${
                                       isToday ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'
                                     }`}
                                   >
@@ -1227,7 +1227,7 @@ export default function UserProfile() {
                             
                             return (
                             <tr key={periodIdx}>
-                              <td className="border border-border bg-muted p-1 sm:p-2 text-xs sm:text-sm font-medium text-center sticky left-0 z-10">
+                              <td className="border border-border bg-muted p-1 sm:p-2 text-xs sm:text-sm font-medium text-center sticky left-0 z-10 w-10 sm:w-12">
                                 {periodIdx + 1}
                               </td>
                               {[1, 2, 3, 4, 5].map((dayIdx) => {
@@ -1250,7 +1250,7 @@ export default function UserProfile() {
                                 return (
                                   <td 
                                     key={dayIdx} 
-                                    className={`border border-border p-1 sm:p-2 text-xs sm:text-sm align-top min-w-[120px] sm:min-w-[180px] ${
+                                    className={`border border-border p-1 sm:p-2 text-xs sm:text-sm align-top ${
                                       isToday && !isTaken ? 'bg-blue-50 dark:bg-blue-900/10' : isTaken ? 'bg-green-100 dark:bg-green-950/30' : ''
                                     }`}
                                   >
@@ -1417,10 +1417,10 @@ export default function UserProfile() {
                         <div className="text-sm text-green-600 dark:text-green-400 mb-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
                           Показани са само заместващите часове за тази седмица
                         </div>
-                        <table className="min-w-full border-collapse">
+                        <table className="w-full table-fixed border-collapse">
                           <thead>
                             <tr>
-                              <th className="border border-border bg-muted p-1 sm:p-2 text-xs sm:text-sm font-medium text-left sticky left-0 z-10">#</th>
+                              <th className="border border-border bg-muted p-1 sm:p-2 text-xs sm:text-sm font-medium text-center sticky left-0 z-10 w-10 sm:w-12">#</th>
                               {["Понеделник", "Вторник", "Сряда", "Четвъртък", "Петък"].map((day, idx) => {
                                 const dayNumber = idx + 1;
                                 const isToday = isTodayInWeek && todayDayOfWeek === dayNumber;
@@ -1430,7 +1430,7 @@ export default function UserProfile() {
                                 return (
                                   <th 
                                     key={idx} 
-                                    className={`border border-border p-1 sm:p-2 text-xs sm:text-sm font-medium text-center min-w-[120px] sm:min-w-[180px] ${
+                                    className={`border border-border p-1 sm:p-2 text-xs sm:text-sm font-medium text-center ${
                                       isToday ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'
                                     }`}
                                   >
@@ -1450,7 +1450,7 @@ export default function UserProfile() {
                           <tbody>
                             {Array.from({ length: substituteOnlySchedule.maxPeriod }).map((_, periodIdx) => (
                               <tr key={periodIdx}>
-                                <td className="border border-border bg-muted p-1 sm:p-2 text-xs sm:text-sm font-medium text-center sticky left-0 z-10">
+                                <td className="border border-border bg-muted p-1 sm:p-2 text-xs sm:text-sm font-medium text-center sticky left-0 z-10 w-10 sm:w-12">
                                   {periodIdx + 1}
                                 </td>
                                 {[1, 2, 3, 4, 5].map((dayIdx) => {
@@ -1463,7 +1463,7 @@ export default function UserProfile() {
                                   return (
                                     <td 
                                       key={dayIdx} 
-                                      className={`border border-border p-1 sm:p-2 text-xs sm:text-sm align-top min-w-[120px] sm:min-w-[180px] ${
+                                      className={`border border-border p-1 sm:p-2 text-xs sm:text-sm align-top ${
                                         subEntry ? 'bg-green-100 dark:bg-green-900/30' : isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''
                                       }`}
                                     >

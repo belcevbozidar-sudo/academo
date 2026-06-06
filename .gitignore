@@ -32,3 +32,5 @@ tsconfig.tsbuildinfo
 # Environment variables
 .env*
 .vercel
+!/.env.production
+
